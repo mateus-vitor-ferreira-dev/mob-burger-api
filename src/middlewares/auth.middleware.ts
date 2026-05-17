@@ -1,0 +1,37 @@
+import type { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { AUTH_CONFIG } from '../config/auth.js';
+import AppError from '../utils/AppError.js';
+import { MSG } from '../constants/messages/index.js';
+import { HTTP } from '../constants/httpStatus.js';
+
+export interface JwtPayload {
+  sub: string;
+  email: string;
+  role: string;
+}
+
+export const authMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    throw new AppError(MSG.auth.unauthorized, HTTP.UNAUTHORIZED, 'UNAUTHORIZED');
+  }
+
+  const token = authHeader.slice(7);
+
+  try {
+    const payload = jwt.verify(token, AUTH_CONFIG.accessTokenSecret) as JwtPayload;
+    req.user = { id: payload.sub, email: payload.email, role: payload.role };
+    next();
+  } catch {
+    throw new AppError(MSG.auth.tokenExpired, HTTP.UNAUTHORIZED, 'TOKEN_EXPIRED');
+  }
+};
+
+export const requireAdmin = (req: Request, _res: Response, next: NextFunction): void => {
+  if (req.user?.role !== 'ADMIN') {
+    throw new AppError(MSG.auth.forbidden, HTTP.FORBIDDEN, 'FORBIDDEN');
+  }
+  next();
+};

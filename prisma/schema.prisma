@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ATTENDANT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  ATTENDANT
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  position Int       @default(0)
+  active   Boolean   @default(true)
+  products Product[]
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  categoryId  String
+  category    Category        @relation(fields: [categoryId], references: [id])
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
+  active      Boolean         @default(true)
+  options     ProductOption[]
+  orderItems  OrderItem[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model ProductOption {
+  id        String       @id @default(cuid())
+  productId String
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label     String
+  type      OptionType
+  required  Boolean      @default(false)
+  items     OptionItem[]
+}
+
+enum OptionType {
+  CHECKBOX
+  RADIO
+}
+
+model OptionItem {
+  id              String            @id @default(cuid())
+  optionId        String
+  option          ProductOption     @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  name            String
+  additionalPrice Float             @default(0)
+  selections      OrderItemOption[]
+}
+
+model Customer {
+  id         String         @id @default(cuid())
+  name       String
+  phone      String
+  createdAt  DateTime       @default(now())
+  orders     Order[]
+  deliveries DeliveryInfo[]
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     Int
+  customerId      String
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  type            OrderType
+  status          OrderStatus   @default(AWAITING_PAYMENT)
+  totalPrice      Float
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus @default(PENDING)
+  stripePaymentId String?
+  items           OrderItem[]
+  delivery        DeliveryInfo?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum OrderType {
+  DELIVERY
+  PICKUP
+}
+
+enum OrderStatus {
+  AWAITING_PAYMENT
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  PICKED_UP
+  CANCELLED
+}
+
+enum PaymentMethod {
+  PIX
+  CARD
+  CASH_ON_DELIVERY
+  CARD_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model OrderItem {
+  id           String            @id @default(cuid())
+  orderId      String
+  order        Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product           @relation(fields: [productId], references: [id])
+  quantity     Int
+  unitPrice    Float
+  observations String?
+  options      OrderItemOption[]
+}
+
+model OrderItemOption {
+  id           String     @id @default(cuid())
+  orderItemId  String
+  orderItem    OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  optionItemId String
+  optionItem   OptionItem @relation(fields: [optionItemId], references: [id])
+}
+
+model DeliveryInfo {
+  id           String        @id @default(cuid())
+  orderId      String        @unique
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId   String
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  street       String
+  number       String
+  neighborhood String
+  complement   String?
+  zoneId       String?
+  zone         DeliveryZone? @relation(fields: [zoneId], references: [id])
+}
+
+model DeliveryZone {
+  id         String         @id @default(cuid())
+  name       String         @unique
+  fee        Float
+  active     Boolean        @default(true)
+  deliveries DeliveryInfo[]
+}
+
+model StoreConfig {
+  id             String  @id @default(cuid())
+  isOpen         Boolean @default(true)
+  openingHours   Json
+  whatsappNumber String?
+}
