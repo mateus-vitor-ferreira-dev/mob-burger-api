@@ -18,11 +18,18 @@ export async function listCategories(_req: Request, res: Response) {
 }
 
 export async function createCategory(req: Request, res: Response) {
-  return success(res, await adminService.createCategoryService(req.body as CategoryInput), HTTP.CREATED);
+  return success(
+    res,
+    await adminService.createCategoryService(req.body as CategoryInput),
+    HTTP.CREATED,
+  );
 }
 
 export async function updateCategory(req: Request, res: Response) {
-  return success(res, await adminService.updateCategoryService(req.params.id, req.body as CategoryInput));
+  return success(
+    res,
+    await adminService.updateCategoryService(req.params.id, req.body as CategoryInput),
+  );
 }
 
 export async function deleteCategory(req: Request, res: Response) {
@@ -37,11 +44,18 @@ export async function listProducts(_req: Request, res: Response) {
 }
 
 export async function createProduct(req: Request, res: Response) {
-  return success(res, await adminService.createProductService(req.body as ProductInput), HTTP.CREATED);
+  return success(
+    res,
+    await adminService.createProductService(req.body as ProductInput),
+    HTTP.CREATED,
+  );
 }
 
 export async function updateProduct(req: Request, res: Response) {
-  return success(res, await adminService.updateProductService(req.params.id, req.body as ProductInput));
+  return success(
+    res,
+    await adminService.updateProductService(req.params.id, req.body as ProductInput),
+  );
 }
 
 export async function deleteProduct(req: Request, res: Response) {
@@ -58,7 +72,10 @@ export async function toggleProduct(req: Request, res: Response) {
 export async function createProductOption(req: Request, res: Response) {
   return success(
     res,
-    await adminService.createProductOptionService(req.params.productId, req.body as ProductOptionInput),
+    await adminService.createProductOptionService(
+      req.params.productId,
+      req.body as ProductOptionInput,
+    ),
     HTTP.CREATED,
   );
 }
@@ -66,7 +83,10 @@ export async function createProductOption(req: Request, res: Response) {
 export async function updateProductOption(req: Request, res: Response) {
   return success(
     res,
-    await adminService.updateProductOptionService(req.params.optionId, req.body as ProductOptionInput),
+    await adminService.updateProductOptionService(
+      req.params.optionId,
+      req.body as ProductOptionInput,
+    ),
   );
 }
 
@@ -104,7 +124,11 @@ export async function listDeliveryZones(_req: Request, res: Response) {
 }
 
 export async function upsertDeliveryZone(req: Request, res: Response) {
-  return success(res, await adminService.upsertDeliveryZoneService(req.body as DeliveryZoneInput), HTTP.CREATED);
+  return success(
+    res,
+    await adminService.upsertDeliveryZoneService(req.body as DeliveryZoneInput),
+    HTTP.CREATED,
+  );
 }
 
 // ─── Config da loja ───────────────────────────────────────────────────────────

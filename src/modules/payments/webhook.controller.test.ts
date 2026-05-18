@@ -28,14 +28,16 @@ const mockRes = () => {
 };
 
 const makeReq = (sig: string | undefined, body: Buffer = Buffer.from('{}')) =>
-  ({ headers: { 'stripe-signature': sig }, body } as unknown as Request);
+  ({ headers: { 'stripe-signature': sig }, body }) as unknown as Request;
 
 beforeEach(() => vi.clearAllMocks());
 
 describe('handleStripeWebhook', () => {
   it('400 — sem stripe-signature no header', async () => {
-    await expect(handleStripeWebhook(makeReq(undefined), mockRes()))
-      .rejects.toMatchObject({ statusCode: 400, code: 'WEBHOOK_INVALID' });
+    await expect(handleStripeWebhook(makeReq(undefined), mockRes())).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'WEBHOOK_INVALID',
+    });
   });
 
   it('400 — constructEvent lança erro (assinatura inválida)', async () => {
@@ -43,8 +45,10 @@ describe('handleStripeWebhook', () => {
       throw new Error('signature mismatch');
     });
 
-    await expect(handleStripeWebhook(makeReq('bad_sig'), mockRes()))
-      .rejects.toMatchObject({ statusCode: 400, code: 'WEBHOOK_INVALID' });
+    await expect(handleStripeWebhook(makeReq('bad_sig'), mockRes())).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'WEBHOOK_INVALID',
+    });
   });
 
   it('200 — payment_intent.succeeded marca pedido como PAID e CONFIRMED', async () => {

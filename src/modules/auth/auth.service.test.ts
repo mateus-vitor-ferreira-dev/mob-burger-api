@@ -57,7 +57,14 @@ import {
 } from './auth.service.js';
 
 const mockUser = { id: 'u1', email: 'admin@test.com', passwordHash: '$hash', role: 'ADMIN' };
-const mockCustomer = { id: 'c1', email: 'c@test.com', name: 'Teste', phone: '11999990000', passwordHash: '$hash', googleId: null };
+const mockCustomer = {
+  id: 'c1',
+  email: 'c@test.com',
+  name: 'Teste',
+  phone: '11999990000',
+  passwordHash: '$hash',
+  googleId: null,
+};
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -79,16 +86,19 @@ describe('loginService', () => {
   it('lança 401 quando usuário não existe', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
-    await expect(loginService({ email: 'x@x.com', password: '123456' }))
-      .rejects.toMatchObject({ statusCode: 401, code: 'INVALID_CREDENTIALS' });
+    await expect(loginService({ email: 'x@x.com', password: '123456' })).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_CREDENTIALS',
+    });
   });
 
   it('lança 401 quando senha está incorreta', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any);
     vi.mocked(bcrypt.compare).mockResolvedValue(false as any);
 
-    await expect(loginService({ email: 'admin@test.com', password: 'errada' }))
-      .rejects.toMatchObject({ statusCode: 401, code: 'INVALID_CREDENTIALS' });
+    await expect(
+      loginService({ email: 'admin@test.com', password: 'errada' }),
+    ).rejects.toMatchObject({ statusCode: 401, code: 'INVALID_CREDENTIALS' });
   });
 });
 
@@ -100,7 +110,10 @@ describe('customerRegisterService', () => {
     vi.mocked(prisma.customer.create).mockResolvedValue(mockCustomer as any);
 
     const result = await customerRegisterService({
-      name: 'Teste', email: 'c@test.com', phone: '11999990000', password: 'senha123',
+      name: 'Teste',
+      email: 'c@test.com',
+      phone: '11999990000',
+      password: 'senha123',
     });
 
     expect(result.accessToken).toBe('mock_token');
@@ -111,9 +124,14 @@ describe('customerRegisterService', () => {
   it('lança 409 quando e-mail já está cadastrado', async () => {
     vi.mocked(prisma.customer.findUnique).mockResolvedValue(mockCustomer as any);
 
-    await expect(customerRegisterService({
-      name: 'Outro', email: 'c@test.com', phone: '11988887777', password: 'senha123',
-    })).rejects.toMatchObject({ statusCode: 409, code: 'EMAIL_ALREADY_EXISTS' });
+    await expect(
+      customerRegisterService({
+        name: 'Outro',
+        email: 'c@test.com',
+        phone: '11988887777',
+        password: 'senha123',
+      }),
+    ).rejects.toMatchObject({ statusCode: 409, code: 'EMAIL_ALREADY_EXISTS' });
   });
 });
 
@@ -133,23 +151,29 @@ describe('customerLoginService', () => {
   it('lança 401 quando cliente não existe', async () => {
     vi.mocked(prisma.customer.findUnique).mockResolvedValue(null);
 
-    await expect(customerLoginService({ email: 'x@x.com', password: 'senha123' }))
-      .rejects.toMatchObject({ statusCode: 401, code: 'INVALID_CREDENTIALS' });
+    await expect(
+      customerLoginService({ email: 'x@x.com', password: 'senha123' }),
+    ).rejects.toMatchObject({ statusCode: 401, code: 'INVALID_CREDENTIALS' });
   });
 
   it('lança 401 quando conta é só Google (sem senha)', async () => {
-    vi.mocked(prisma.customer.findUnique).mockResolvedValue({ ...mockCustomer, passwordHash: null } as any);
+    vi.mocked(prisma.customer.findUnique).mockResolvedValue({
+      ...mockCustomer,
+      passwordHash: null,
+    } as any);
 
-    await expect(customerLoginService({ email: 'c@test.com', password: 'senha123' }))
-      .rejects.toMatchObject({ statusCode: 401, code: 'PASSWORD_NOT_SET' });
+    await expect(
+      customerLoginService({ email: 'c@test.com', password: 'senha123' }),
+    ).rejects.toMatchObject({ statusCode: 401, code: 'PASSWORD_NOT_SET' });
   });
 
   it('lança 401 quando senha está incorreta', async () => {
     vi.mocked(prisma.customer.findUnique).mockResolvedValue(mockCustomer as any);
     vi.mocked(bcrypt.compare).mockResolvedValue(false as any);
 
-    await expect(customerLoginService({ email: 'c@test.com', password: 'errada' }))
-      .rejects.toMatchObject({ statusCode: 401, code: 'INVALID_CREDENTIALS' });
+    await expect(
+      customerLoginService({ email: 'c@test.com', password: 'errada' }),
+    ).rejects.toMatchObject({ statusCode: 401, code: 'INVALID_CREDENTIALS' });
   });
 });
 
@@ -162,7 +186,9 @@ describe('googleAuthService', () => {
     mockVerifyIdToken.mockResolvedValue({ getPayload: () => googlePayload });
     vi.mocked(prisma.customer.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.customer.create).mockResolvedValue({
-      ...mockCustomer, email: 'google@test.com', googleId: 'google_123',
+      ...mockCustomer,
+      email: 'google@test.com',
+      googleId: 'google_123',
     } as any);
 
     const result = await googleAuthService({ idToken: 'valid_token' });
@@ -176,7 +202,8 @@ describe('googleAuthService', () => {
   it('retorna tokens para cliente Google já existente', async () => {
     mockVerifyIdToken.mockResolvedValue({ getPayload: () => googlePayload });
     vi.mocked(prisma.customer.findFirst).mockResolvedValue({
-      ...mockCustomer, googleId: 'google_123',
+      ...mockCustomer,
+      googleId: 'google_123',
     } as any);
 
     const result = await googleAuthService({ idToken: 'valid_token' });
@@ -187,9 +214,13 @@ describe('googleAuthService', () => {
 
   it('vincula googleId a cliente com mesmo e-mail', async () => {
     mockVerifyIdToken.mockResolvedValue({ getPayload: () => googlePayload });
-    vi.mocked(prisma.customer.findFirst).mockResolvedValue({ ...mockCustomer, googleId: null } as any);
+    vi.mocked(prisma.customer.findFirst).mockResolvedValue({
+      ...mockCustomer,
+      googleId: null,
+    } as any);
     vi.mocked(prisma.customer.update).mockResolvedValue({
-      ...mockCustomer, googleId: 'google_123',
+      ...mockCustomer,
+      googleId: 'google_123',
     } as any);
 
     await googleAuthService({ idToken: 'valid_token' });
@@ -202,8 +233,10 @@ describe('googleAuthService', () => {
   it('lança 401 quando token do Google é inválido', async () => {
     mockVerifyIdToken.mockRejectedValue(new Error('invalid token'));
 
-    await expect(googleAuthService({ idToken: 'invalid' }))
-      .rejects.toMatchObject({ statusCode: 401, code: 'INVALID_GOOGLE_TOKEN' });
+    await expect(googleAuthService({ idToken: 'invalid' })).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_GOOGLE_TOKEN',
+    });
   });
 });
 
@@ -211,7 +244,12 @@ describe('googleAuthService', () => {
 
 describe('refreshTokenService', () => {
   it('renova tokens para staff', async () => {
-    vi.mocked(jwt.verify).mockReturnValue({ sub: 'u1', email: 'admin@test.com', role: 'ADMIN', type: 'staff' } as any);
+    vi.mocked(jwt.verify).mockReturnValue({
+      sub: 'u1',
+      email: 'admin@test.com',
+      role: 'ADMIN',
+      type: 'staff',
+    } as any);
     vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any);
 
     const result = await refreshTokenService({ refreshToken: 'valid_refresh' });
@@ -220,7 +258,11 @@ describe('refreshTokenService', () => {
   });
 
   it('renova tokens para cliente', async () => {
-    vi.mocked(jwt.verify).mockReturnValue({ sub: 'c1', email: 'c@test.com', type: 'customer' } as any);
+    vi.mocked(jwt.verify).mockReturnValue({
+      sub: 'c1',
+      email: 'c@test.com',
+      type: 'customer',
+    } as any);
     vi.mocked(prisma.customer.findUnique).mockResolvedValue(mockCustomer as any);
 
     const result = await refreshTokenService({ refreshToken: 'valid_refresh' });
@@ -229,17 +271,23 @@ describe('refreshTokenService', () => {
   });
 
   it('lança 401 quando refresh token é inválido', async () => {
-    vi.mocked(jwt.verify).mockImplementation(() => { throw new Error('invalid'); });
+    vi.mocked(jwt.verify).mockImplementation(() => {
+      throw new Error('invalid');
+    });
 
-    await expect(refreshTokenService({ refreshToken: 'bad_token' }))
-      .rejects.toMatchObject({ statusCode: 401, code: 'INVALID_REFRESH_TOKEN' });
+    await expect(refreshTokenService({ refreshToken: 'bad_token' })).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_REFRESH_TOKEN',
+    });
   });
 
   it('lança 401 quando usuário não existe mais no banco', async () => {
     vi.mocked(jwt.verify).mockReturnValue({ sub: 'u_deleted', type: 'staff' } as any);
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
-    await expect(refreshTokenService({ refreshToken: 'orphan_token' }))
-      .rejects.toMatchObject({ statusCode: 401, code: 'INVALID_REFRESH_TOKEN' });
+    await expect(refreshTokenService({ refreshToken: 'orphan_token' })).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_REFRESH_TOKEN',
+    });
   });
 });

@@ -1,13 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import app from '../../src/app.js';
-import { adminToken, customerToken, createCategory, createProduct, prisma } from '../helpers.js';
+import { adminToken, createCategory, createProduct, prisma } from '../helpers.js';
 
 describe('GET /api/admin/categories', () => {
   it('200 — admin lista todas as categorias (incluindo inativas)', async () => {
     const token = await adminToken();
     await createCategory({ name: 'Ativa', slug: 'ativa' });
-    await prisma.category.create({ data: { name: 'Inativa', slug: 'inativa', position: 2, active: false } });
+    await prisma.category.create({
+      data: { name: 'Inativa', slug: 'inativa', position: 2, active: false },
+    });
 
     const res = await request(app)
       .get('/api/admin/categories')
@@ -173,9 +175,7 @@ describe('GET /api/admin/config', () => {
       data: { isOpen: true, openingHours: {}, whatsappNumber: '11999990000' },
     });
 
-    const res = await request(app)
-      .get('/api/admin/config')
-      .set('Authorization', `Bearer ${token}`);
+    const res = await request(app).get('/api/admin/config').set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data.isOpen).toBe(true);
@@ -184,9 +184,7 @@ describe('GET /api/admin/config', () => {
   it('200 — retorna null quando sem config', async () => {
     const token = await adminToken();
 
-    const res = await request(app)
-      .get('/api/admin/config')
-      .set('Authorization', `Bearer ${token}`);
+    const res = await request(app).get('/api/admin/config').set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data).toBeNull();

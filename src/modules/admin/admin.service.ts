@@ -23,7 +23,8 @@ export async function createCategoryService(data: CategoryInput) {
 
 export async function updateCategoryService(id: string, data: CategoryInput) {
   const category = await prisma.category.findUnique({ where: { id } });
-  if (!category) throw new AppError(MSG.menu.categoryNotFound, HTTP.NOT_FOUND, 'CATEGORY_NOT_FOUND');
+  if (!category)
+    throw new AppError(MSG.menu.categoryNotFound, HTTP.NOT_FOUND, 'CATEGORY_NOT_FOUND');
   return prisma.category.update({ where: { id }, data });
 }
 
@@ -32,7 +33,8 @@ export async function deleteCategoryService(id: string) {
     where: { id },
     include: { _count: { select: { products: true } } },
   });
-  if (!category) throw new AppError(MSG.menu.categoryNotFound, HTTP.NOT_FOUND, 'CATEGORY_NOT_FOUND');
+  if (!category)
+    throw new AppError(MSG.menu.categoryNotFound, HTTP.NOT_FOUND, 'CATEGORY_NOT_FOUND');
   if (category._count.products > 0) {
     throw new AppError(
       'Não é possível excluir uma categoria com produtos. Remova os produtos primeiro.',

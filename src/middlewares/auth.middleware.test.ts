@@ -30,13 +30,15 @@ beforeEach(() => vi.clearAllMocks());
 
 describe('authMiddleware', () => {
   it('lança 401 sem header Authorization', () => {
-    expect(() => authMiddleware(makeReq(), res, next))
-      .toThrow(expect.objectContaining({ statusCode: 401, code: 'UNAUTHORIZED' }));
+    expect(() => authMiddleware(makeReq(), res, next)).toThrow(
+      expect.objectContaining({ statusCode: 401, code: 'UNAUTHORIZED' }),
+    );
   });
 
   it('lança 401 com header sem prefixo Bearer', () => {
-    expect(() => authMiddleware(makeReq({ authorization: 'Token abc123' }), res, next))
-      .toThrow(expect.objectContaining({ statusCode: 401, code: 'UNAUTHORIZED' }));
+    expect(() => authMiddleware(makeReq({ authorization: 'Token abc123' }), res, next)).toThrow(
+      expect.objectContaining({ statusCode: 401, code: 'UNAUTHORIZED' }),
+    );
   });
 
   it('popula req.user e chama next() com token válido', () => {
@@ -51,10 +53,13 @@ describe('authMiddleware', () => {
   });
 
   it('lança 401 quando token está expirado', () => {
-    vi.mocked(jwt.verify).mockImplementation(() => { throw new Error('jwt expired'); });
+    vi.mocked(jwt.verify).mockImplementation(() => {
+      throw new Error('jwt expired');
+    });
 
-    expect(() => authMiddleware(makeReq({ authorization: 'Bearer expired' }), res, next))
-      .toThrow(expect.objectContaining({ statusCode: 401, code: 'TOKEN_EXPIRED' }));
+    expect(() => authMiddleware(makeReq({ authorization: 'Bearer expired' }), res, next)).toThrow(
+      expect.objectContaining({ statusCode: 401, code: 'TOKEN_EXPIRED' }),
+    );
   });
 });
 
@@ -68,13 +73,15 @@ describe('requireAdmin', () => {
   });
 
   it('lança 403 para ATTENDANT', () => {
-    expect(() => requireAdmin(makeReq({}, { role: 'ATTENDANT', type: 'staff' }), res, next))
-      .toThrow(expect.objectContaining({ statusCode: 403, code: 'FORBIDDEN' }));
+    expect(() =>
+      requireAdmin(makeReq({}, { role: 'ATTENDANT', type: 'staff' }), res, next),
+    ).toThrow(expect.objectContaining({ statusCode: 403, code: 'FORBIDDEN' }));
   });
 
   it('lança 403 para cliente', () => {
-    expect(() => requireAdmin(makeReq({}, { type: 'customer' }), res, next))
-      .toThrow(expect.objectContaining({ statusCode: 403, code: 'FORBIDDEN' }));
+    expect(() => requireAdmin(makeReq({}, { type: 'customer' }), res, next)).toThrow(
+      expect.objectContaining({ statusCode: 403, code: 'FORBIDDEN' }),
+    );
   });
 });
 
@@ -87,8 +94,9 @@ describe('requireStaff', () => {
   });
 
   it('lança 403 para cliente', () => {
-    expect(() => requireStaff(makeReq({}, { type: 'customer' }), res, next))
-      .toThrow(expect.objectContaining({ statusCode: 403, code: 'FORBIDDEN' }));
+    expect(() => requireStaff(makeReq({}, { type: 'customer' }), res, next)).toThrow(
+      expect.objectContaining({ statusCode: 403, code: 'FORBIDDEN' }),
+    );
   });
 });
 
@@ -101,7 +109,8 @@ describe('requireCustomer', () => {
   });
 
   it('lança 403 para staff', () => {
-    expect(() => requireCustomer(makeReq({}, { type: 'staff', role: 'ADMIN' }), res, next))
-      .toThrow(expect.objectContaining({ statusCode: 403, code: 'FORBIDDEN' }));
+    expect(() => requireCustomer(makeReq({}, { type: 'staff', role: 'ADMIN' }), res, next)).toThrow(
+      expect.objectContaining({ statusCode: 403, code: 'FORBIDDEN' }),
+    );
   });
 });

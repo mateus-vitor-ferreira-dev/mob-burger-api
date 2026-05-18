@@ -38,9 +38,17 @@ import {
 const mockCustomer = { id: 'c1', name: 'João', email: 'j@test.com', phone: '11999990000' };
 const mockProduct = { id: 'p1', name: 'Classic Burger', price: 29.9, active: true };
 const mockOrder = {
-  id: 'o1', orderNumber: 1, customerId: 'c1', type: 'PICKUP',
-  status: 'AWAITING_PAYMENT', totalPrice: 29.9, paymentMethod: 'CASH_ON_DELIVERY',
-  paymentStatus: 'PENDING', items: [], delivery: null, customer: mockCustomer,
+  id: 'o1',
+  orderNumber: 1,
+  customerId: 'c1',
+  type: 'PICKUP',
+  status: 'AWAITING_PAYMENT',
+  totalPrice: 29.9,
+  paymentMethod: 'CASH_ON_DELIVERY',
+  paymentStatus: 'PENDING',
+  items: [],
+  delivery: null,
+  customer: mockCustomer,
 };
 
 const pickupInput = {
@@ -111,29 +119,39 @@ describe('createOrderService', () => {
   it('lança 404 quando cliente não existe', async () => {
     vi.mocked(prisma.customer.findUnique).mockResolvedValue(null);
 
-    await expect(createOrderService('missing', pickupInput))
-      .rejects.toMatchObject({ statusCode: 404 });
+    await expect(createOrderService('missing', pickupInput)).rejects.toMatchObject({
+      statusCode: 404,
+    });
   });
 
   it('lança 422 quando cliente não tem telefone', async () => {
-    vi.mocked(prisma.customer.findUnique).mockResolvedValue({ ...mockCustomer, phone: null } as any);
+    vi.mocked(prisma.customer.findUnique).mockResolvedValue({
+      ...mockCustomer,
+      phone: null,
+    } as any);
 
-    await expect(createOrderService('c1', pickupInput))
-      .rejects.toMatchObject({ statusCode: 422, code: 'PHONE_REQUIRED' });
+    await expect(createOrderService('c1', pickupInput)).rejects.toMatchObject({
+      statusCode: 422,
+      code: 'PHONE_REQUIRED',
+    });
   });
 
   it('lança 422 quando loja está fechada', async () => {
     vi.mocked(prisma.storeConfig.findFirst).mockResolvedValue({ isOpen: false } as any);
 
-    await expect(createOrderService('c1', pickupInput))
-      .rejects.toMatchObject({ statusCode: 422, code: 'STORE_CLOSED' });
+    await expect(createOrderService('c1', pickupInput)).rejects.toMatchObject({
+      statusCode: 422,
+      code: 'STORE_CLOSED',
+    });
   });
 
   it('lança 400 quando produto não está disponível', async () => {
     vi.mocked(prisma.product.findMany).mockResolvedValue([]); // nenhum produto encontrado
 
-    await expect(createOrderService('c1', pickupInput))
-      .rejects.toMatchObject({ statusCode: 400, code: 'PRODUCT_UNAVAILABLE' });
+    await expect(createOrderService('c1', pickupInput)).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'PRODUCT_UNAVAILABLE',
+    });
   });
 });
 
@@ -151,8 +169,10 @@ describe('getOrderService', () => {
   it('lança 404 quando pedido não existe', async () => {
     vi.mocked(prisma.order.findUnique).mockResolvedValue(null);
 
-    await expect(getOrderService('missing'))
-      .rejects.toMatchObject({ statusCode: 404, code: 'ORDER_NOT_FOUND' });
+    await expect(getOrderService('missing')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'ORDER_NOT_FOUND',
+    });
   });
 });
 
@@ -160,7 +180,10 @@ describe('getOrderService', () => {
 
 describe('updateOrderStatusService', () => {
   it('atualiza status em transição válida (CONFIRMED → PREPARING)', async () => {
-    vi.mocked(prisma.order.findUnique).mockResolvedValue({ ...mockOrder, status: 'CONFIRMED' } as any);
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({
+      ...mockOrder,
+      status: 'CONFIRMED',
+    } as any);
     vi.mocked(prisma.order.update).mockResolvedValue({ ...mockOrder, status: 'PREPARING' } as any);
 
     const result = await updateOrderStatusService('o1', { status: 'PREPARING' });
@@ -172,24 +195,35 @@ describe('updateOrderStatusService', () => {
   });
 
   it('lança 422 para transição inválida (DELIVERED → PREPARING)', async () => {
-    vi.mocked(prisma.order.findUnique).mockResolvedValue({ ...mockOrder, status: 'DELIVERED' } as any);
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({
+      ...mockOrder,
+      status: 'DELIVERED',
+    } as any);
 
-    await expect(updateOrderStatusService('o1', { status: 'PREPARING' }))
-      .rejects.toMatchObject({ statusCode: 422, code: 'INVALID_STATUS_TRANSITION' });
+    await expect(updateOrderStatusService('o1', { status: 'PREPARING' })).rejects.toMatchObject({
+      statusCode: 422,
+      code: 'INVALID_STATUS_TRANSITION',
+    });
   });
 
   it('lança 422 para transição inválida (CANCELLED → CONFIRMED)', async () => {
-    vi.mocked(prisma.order.findUnique).mockResolvedValue({ ...mockOrder, status: 'CANCELLED' } as any);
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({
+      ...mockOrder,
+      status: 'CANCELLED',
+    } as any);
 
-    await expect(updateOrderStatusService('o1', { status: 'CONFIRMED' }))
-      .rejects.toMatchObject({ statusCode: 422, code: 'INVALID_STATUS_TRANSITION' });
+    await expect(updateOrderStatusService('o1', { status: 'CONFIRMED' })).rejects.toMatchObject({
+      statusCode: 422,
+      code: 'INVALID_STATUS_TRANSITION',
+    });
   });
 
   it('lança 404 quando pedido não existe', async () => {
     vi.mocked(prisma.order.findUnique).mockResolvedValue(null);
 
-    await expect(updateOrderStatusService('missing', { status: 'CONFIRMED' }))
-      .rejects.toMatchObject({ statusCode: 404, code: 'ORDER_NOT_FOUND' });
+    await expect(
+      updateOrderStatusService('missing', { status: 'CONFIRMED' }),
+    ).rejects.toMatchObject({ statusCode: 404, code: 'ORDER_NOT_FOUND' });
   });
 });
 
@@ -202,9 +236,7 @@ describe('listOrdersService', () => {
     const result = await listOrdersService();
 
     expect(result).toHaveLength(1);
-    expect(prisma.order.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: {} }),
-    );
+    expect(prisma.order.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: {} }));
   });
 
   it('filtra por status quando fornecido', async () => {

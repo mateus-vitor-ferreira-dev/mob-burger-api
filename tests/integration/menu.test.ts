@@ -13,7 +13,7 @@ describe('GET /api/menu', () => {
 
   it('200 — retorna categorias com produtos e opções', async () => {
     const cat = await createCategory({ name: 'Burgers', slug: 'burgers' });
-    const prod = await createProduct(cat.id, { name: 'Classic Burger' });
+    await createProduct(cat.id, { name: 'Classic Burger' });
 
     const res = await request(app).get('/api/menu');
 

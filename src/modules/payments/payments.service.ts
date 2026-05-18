@@ -7,8 +7,10 @@ import { MSG } from '../../constants/messages/index.js';
 export async function createPaymentIntentService(customerId: string, orderId: string) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new AppError(MSG.order.notFound, HTTP.NOT_FOUND, 'ORDER_NOT_FOUND');
-  if (order.customerId !== customerId) throw new AppError(MSG.auth.forbidden, HTTP.FORBIDDEN, 'FORBIDDEN');
-  if (order.paymentStatus === 'PAID') throw new AppError(MSG.payment.alreadyPaid, HTTP.CONFLICT, 'ALREADY_PAID');
+  if (order.customerId !== customerId)
+    throw new AppError(MSG.auth.forbidden, HTTP.FORBIDDEN, 'FORBIDDEN');
+  if (order.paymentStatus === 'PAID')
+    throw new AppError(MSG.payment.alreadyPaid, HTTP.CONFLICT, 'ALREADY_PAID');
 
   const amount = Math.round(order.totalPrice * 100);
 
@@ -41,6 +43,7 @@ export async function createPaymentIntentService(customerId: string, orderId: st
       data: { stripePaymentId: intent.id },
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const qr = (intent as any).next_action?.pix_display_qr_code;
 
     return {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import app from '../../src/app.js';
-import { adminToken, customerToken, createCategory, createProduct, createCustomer, prisma } from '../helpers.js';
+import { adminToken, customerToken, createCategory, createProduct, prisma } from '../helpers.js';
 
 async function setupOrderData() {
   const cat = await createCategory();
@@ -103,7 +103,11 @@ describe('GET /api/orders/:id (tracking público)', () => {
     const created = await request(app)
       .post('/api/orders')
       .set('Authorization', `Bearer ${token}`)
-      .send({ type: 'PICKUP', paymentMethod: 'CASH_ON_DELIVERY', items: [{ productId: prod.id, quantity: 1, options: [] }] });
+      .send({
+        type: 'PICKUP',
+        paymentMethod: 'CASH_ON_DELIVERY',
+        items: [{ productId: prod.id, quantity: 1, options: [] }],
+      });
 
     const res = await request(app).get(`/api/orders/${created.body.data.id}`);
 
@@ -125,11 +129,13 @@ describe('GET /api/orders/my', () => {
     await request(app)
       .post('/api/orders')
       .set('Authorization', `Bearer ${token}`)
-      .send({ type: 'PICKUP', paymentMethod: 'CASH_ON_DELIVERY', items: [{ productId: prod.id, quantity: 1, options: [] }] });
+      .send({
+        type: 'PICKUP',
+        paymentMethod: 'CASH_ON_DELIVERY',
+        items: [{ productId: prod.id, quantity: 1, options: [] }],
+      });
 
-    const res = await request(app)
-      .get('/api/orders/my')
-      .set('Authorization', `Bearer ${token}`);
+    const res = await request(app).get('/api/orders/my').set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
@@ -176,7 +182,11 @@ describe('PATCH /api/orders/:id/status', () => {
     const order = await request(app)
       .post('/api/orders')
       .set('Authorization', `Bearer ${cToken}`)
-      .send({ type: 'PICKUP', paymentMethod: 'CASH_ON_DELIVERY', items: [{ productId: prod.id, quantity: 1, options: [] }] });
+      .send({
+        type: 'PICKUP',
+        paymentMethod: 'CASH_ON_DELIVERY',
+        items: [{ productId: prod.id, quantity: 1, options: [] }],
+      });
 
     // AWAITING_PAYMENT → CONFIRMED
     const res = await request(app)
@@ -196,7 +206,11 @@ describe('PATCH /api/orders/:id/status', () => {
     const order = await request(app)
       .post('/api/orders')
       .set('Authorization', `Bearer ${cToken}`)
-      .send({ type: 'PICKUP', paymentMethod: 'CASH_ON_DELIVERY', items: [{ productId: prod.id, quantity: 1, options: [] }] });
+      .send({
+        type: 'PICKUP',
+        paymentMethod: 'CASH_ON_DELIVERY',
+        items: [{ productId: prod.id, quantity: 1, options: [] }],
+      });
 
     // AWAITING_PAYMENT → DELIVERED (inválido)
     const res = await request(app)

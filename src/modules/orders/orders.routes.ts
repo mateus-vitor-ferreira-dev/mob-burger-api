@@ -1,9 +1,19 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { authMiddleware, requireCustomer, requireStaff } from '../../middlewares/auth.middleware.js';
+import {
+  authMiddleware,
+  requireCustomer,
+  requireStaff,
+} from '../../middlewares/auth.middleware.js';
 import { validate } from '../../middlewares/validate.js';
 import { createOrderSchema, updateStatusSchema } from './orders.schema.js';
-import { createOrder, getOrder, myOrders, listOrders, updateOrderStatus } from './orders.controller.js';
+import {
+  createOrder,
+  getOrder,
+  myOrders,
+  listOrders,
+  updateOrderStatus,
+} from './orders.controller.js';
 
 const router = Router();
 
@@ -71,7 +81,13 @@ const router = Router();
  *       422:
  *         description: Loja fechada ou telefone não cadastrado
  */
-router.post('/', authMiddleware, requireCustomer, validate(createOrderSchema), asyncHandler(createOrder));
+router.post(
+  '/',
+  authMiddleware,
+  requireCustomer,
+  validate(createOrderSchema),
+  asyncHandler(createOrder),
+);
 
 /**
  * @openapi
@@ -163,6 +179,12 @@ router.get('/', authMiddleware, requireStaff, asyncHandler(listOrders));
  *       422:
  *         description: Transição de status inválida
  */
-router.patch('/:id/status', authMiddleware, requireStaff, validate(updateStatusSchema), asyncHandler(updateOrderStatus));
+router.patch(
+  '/:id/status',
+  authMiddleware,
+  requireStaff,
+  validate(updateStatusSchema),
+  asyncHandler(updateOrderStatus),
+);
 
 export default router;

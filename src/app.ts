@@ -51,7 +51,9 @@ app.use('/api/admin', authMiddleware, requireAdmin, adminRoutes);
 
 // 404
 app.use((_req, res) => {
-  res.status(404).json({ error: { message: 'Rota não encontrada.', code: 'NOT_FOUND', status: 404 } });
+  res
+    .status(404)
+    .json({ error: { message: 'Rota não encontrada.', code: 'NOT_FOUND', status: 404 } });
 });
 
 app.use(errorMiddleware);

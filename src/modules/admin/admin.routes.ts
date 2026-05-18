@@ -2,16 +2,33 @@ import { Router } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { validate } from '../../middlewares/validate.js';
 import {
-  categorySchema, productSchema, productOptionSchema,
-  optionItemSchema, deliveryZoneSchema, storeConfigSchema,
+  categorySchema,
+  productSchema,
+  productOptionSchema,
+  optionItemSchema,
+  deliveryZoneSchema,
+  storeConfigSchema,
 } from './admin.schema.js';
 import {
-  listCategories, createCategory, updateCategory, deleteCategory,
-  listProducts, createProduct, updateProduct, deleteProduct, toggleProduct,
-  createProductOption, updateProductOption, deleteProductOption,
-  createOptionItem, updateOptionItem, deleteOptionItem,
-  listDeliveryZones, upsertDeliveryZone,
-  getStoreConfig, updateStoreConfig,
+  listCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  listProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  toggleProduct,
+  createProductOption,
+  updateProductOption,
+  deleteProductOption,
+  createOptionItem,
+  updateOptionItem,
+  deleteOptionItem,
+  listDeliveryZones,
+  upsertDeliveryZone,
+  getStoreConfig,
+  updateStoreConfig,
 } from './admin.controller.js';
 
 const router = Router();
@@ -242,7 +259,11 @@ router.patch('/products/:id/toggle', asyncHandler(toggleProduct));
  *       201:
  *         description: Grupo de opções criado
  */
-router.post('/products/:productId/options', validate(productOptionSchema), asyncHandler(createProductOption));
+router.post(
+  '/products/:productId/options',
+  validate(productOptionSchema),
+  asyncHandler(createProductOption),
+);
 
 /**
  * @openapi
@@ -290,7 +311,11 @@ router.post('/products/:productId/options', validate(productOptionSchema), async
  *       204:
  *         description: Grupo excluído
  */
-router.put('/products/:productId/options/:optionId', validate(productOptionSchema), asyncHandler(updateProductOption));
+router.put(
+  '/products/:productId/options/:optionId',
+  validate(productOptionSchema),
+  asyncHandler(updateProductOption),
+);
 router.delete('/products/:productId/options/:optionId', asyncHandler(deleteProductOption));
 
 /**
@@ -324,7 +349,11 @@ router.delete('/products/:productId/options/:optionId', asyncHandler(deleteProdu
  *       201:
  *         description: Item criado
  */
-router.post('/products/:productId/options/:optionId/items', validate(optionItemSchema), asyncHandler(createOptionItem));
+router.post(
+  '/products/:productId/options/:optionId/items',
+  validate(optionItemSchema),
+  asyncHandler(createOptionItem),
+);
 
 /**
  * @openapi
@@ -379,8 +408,15 @@ router.post('/products/:productId/options/:optionId/items', validate(optionItemS
  *       204:
  *         description: Item excluído
  */
-router.put('/products/:productId/options/:optionId/items/:itemId', validate(optionItemSchema), asyncHandler(updateOptionItem));
-router.delete('/products/:productId/options/:optionId/items/:itemId', asyncHandler(deleteOptionItem));
+router.put(
+  '/products/:productId/options/:optionId/items/:itemId',
+  validate(optionItemSchema),
+  asyncHandler(updateOptionItem),
+);
+router.delete(
+  '/products/:productId/options/:optionId/items/:itemId',
+  asyncHandler(deleteOptionItem),
+);
 
 // ─── Zonas de entrega ─────────────────────────────────────────────────────────
 

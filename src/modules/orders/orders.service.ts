@@ -9,13 +9,13 @@ import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
 // Transições de status permitidas pelo operador
 const VALID_TRANSITIONS: Record<string, string[]> = {
   AWAITING_PAYMENT: ['CONFIRMED', 'CANCELLED'],
-  CONFIRMED:        ['PREPARING', 'CANCELLED'],
-  PREPARING:        ['READY', 'CANCELLED'],
-  READY:            ['OUT_FOR_DELIVERY', 'PICKED_UP', 'CANCELLED'],
+  CONFIRMED: ['PREPARING', 'CANCELLED'],
+  PREPARING: ['READY', 'CANCELLED'],
+  READY: ['OUT_FOR_DELIVERY', 'PICKED_UP', 'CANCELLED'],
   OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
-  DELIVERED:        [],
-  PICKED_UP:        [],
-  CANCELLED:        [],
+  DELIVERED: [],
+  PICKED_UP: [],
+  CANCELLED: [],
 };
 
 export async function createOrderService(customerId: string, data: CreateOrderInput) {

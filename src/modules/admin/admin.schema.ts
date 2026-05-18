@@ -2,7 +2,11 @@ import { z } from 'zod';
 
 export const categorySchema = z.object({
   name: z.string().min(2).max(50),
-  slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, 'Slug deve conter apenas letras minúsculas, números e hífens'),
+  slug: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, 'Slug deve conter apenas letras minúsculas, números e hífens'),
   position: z.number().int().min(0).default(0),
   active: z.boolean().default(true),
 });
@@ -35,11 +39,13 @@ export const deliveryZoneSchema = z.object({
 
 export const storeConfigSchema = z.object({
   isOpen: z.boolean(),
-  openingHours: z.record(z.object({
-    open: z.string(),
-    close: z.string(),
-    closed: z.boolean().default(false),
-  })),
+  openingHours: z.record(
+    z.object({
+      open: z.string(),
+      close: z.string(),
+      closed: z.boolean().default(false),
+    }),
+  ),
   whatsappNumber: z.string().optional(),
 });
 

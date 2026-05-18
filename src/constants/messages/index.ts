@@ -15,7 +15,8 @@ export const MSG = {
   },
   order: {
     notFound: 'Pedido não encontrado.',
-    storeClosed: 'A loja está fechada no momento. Tente novamente durante o horário de funcionamento.',
+    storeClosed:
+      'A loja está fechada no momento. Tente novamente durante o horário de funcionamento.',
     pixExpired: 'O QR Code Pix expirou. Por favor, refaça o pedido.',
     created: 'Pedido criado com sucesso.',
     statusUpdated: 'Status do pedido atualizado.',

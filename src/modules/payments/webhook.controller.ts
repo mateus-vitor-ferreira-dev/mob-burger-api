@@ -15,7 +15,11 @@ export async function handleStripeWebhook(req: Request, res: Response) {
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(req.body as Buffer, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      req.body as Buffer,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET,
+    );
   } catch {
     throw new AppError(MSG.payment.webhookInvalid, HTTP.BAD_REQUEST, 'WEBHOOK_INVALID');
   }

@@ -19,18 +19,28 @@ const deliveryInfoSchema = z.object({
   zoneId: z.string().cuid().optional(),
 });
 
-export const createOrderSchema = z.object({
-  type: z.enum(['DELIVERY', 'PICKUP']),
-  paymentMethod: z.enum(['PIX', 'CARD', 'CASH_ON_DELIVERY', 'CARD_ON_DELIVERY']),
-  items: z.array(orderItemSchema).min(1),
-  delivery: deliveryInfoSchema.optional(),
-}).refine(
-  (data) => data.type === 'PICKUP' || (data.type === 'DELIVERY' && data.delivery),
-  { message: 'Endereço de entrega é obrigatório para delivery.', path: ['delivery'] },
-);
+export const createOrderSchema = z
+  .object({
+    type: z.enum(['DELIVERY', 'PICKUP']),
+    paymentMethod: z.enum(['PIX', 'CARD', 'CASH_ON_DELIVERY', 'CARD_ON_DELIVERY']),
+    items: z.array(orderItemSchema).min(1),
+    delivery: deliveryInfoSchema.optional(),
+  })
+  .refine((data) => data.type === 'PICKUP' || (data.type === 'DELIVERY' && data.delivery), {
+    message: 'Endereço de entrega é obrigatório para delivery.',
+    path: ['delivery'],
+  });
 
 export const updateStatusSchema = z.object({
-  status: z.enum(['CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'PICKED_UP', 'CANCELLED']),
+  status: z.enum([
+    'CONFIRMED',
+    'PREPARING',
+    'READY',
+    'OUT_FOR_DELIVERY',
+    'DELIVERED',
+    'PICKED_UP',
+    'CANCELLED',
+  ]),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

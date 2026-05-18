@@ -15,9 +15,14 @@ export async function createAttendant(email = 'atendente@test.com', password = '
   return prisma.user.create({ data: { email, passwordHash: hash, role: 'ATTENDANT' } });
 }
 
-export async function createCustomer(overrides: Partial<{
-  name: string; email: string; phone: string; password: string;
-}> = {}) {
+export async function createCustomer(
+  overrides: Partial<{
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+  }> = {},
+) {
   const data = {
     name: 'Cliente Teste',
     email: 'cliente@test.com',
@@ -33,31 +38,36 @@ export async function createCustomer(overrides: Partial<{
 
 export async function adminToken(email = 'admin@test.com', password = 'senha123') {
   await createAdmin(email, password);
-  const res = await request(app)
-    .post('/api/auth/login')
-    .send({ email, password });
+  const res = await request(app).post('/api/auth/login').send({ email, password });
   return res.body.data.accessToken as string;
 }
 
 export async function customerToken(email = 'cliente@test.com', password = 'senha123') {
   await createCustomer({ email, password });
-  const res = await request(app)
-    .post('/api/auth/customer/login')
-    .send({ email, password });
+  const res = await request(app).post('/api/auth/customer/login').send({ email, password });
   return res.body.data.accessToken as string;
 }
 
-export async function createCategory(overrides: Partial<{
-  name: string; slug: string; position: number;
-}> = {}) {
+export async function createCategory(
+  overrides: Partial<{
+    name: string;
+    slug: string;
+    position: number;
+  }> = {},
+) {
   return prisma.category.create({
     data: { name: 'Burgers', slug: 'burgers', position: 1, ...overrides },
   });
 }
 
-export async function createProduct(categoryId: string, overrides: Partial<{
-  name: string; price: number; active: boolean;
-}> = {}) {
+export async function createProduct(
+  categoryId: string,
+  overrides: Partial<{
+    name: string;
+    price: number;
+    active: boolean;
+  }> = {},
+) {
   return prisma.product.create({
     data: {
       categoryId,
@@ -70,7 +80,11 @@ export async function createProduct(categoryId: string, overrides: Partial<{
   });
 }
 
-export async function createOrderForCustomer(customerId: string, productId: string, paymentMethod = 'CASH_ON_DELIVERY') {
+export async function createOrderForCustomer(
+  customerId: string,
+  productId: string,
+  paymentMethod = 'CASH_ON_DELIVERY',
+) {
   return prisma.order.create({
     data: {
       orderNumber: 1,
@@ -80,11 +94,13 @@ export async function createOrderForCustomer(customerId: string, productId: stri
       totalPrice: 29.9,
       paymentMethod: paymentMethod as any,
       items: {
-        create: [{
-          productId,
-          quantity: 1,
-          unitPrice: 29.9,
-        }],
+        create: [
+          {
+            productId,
+            quantity: 1,
+            unitPrice: 29.9,
+          },
+        ],
       },
     },
   });

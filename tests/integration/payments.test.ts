@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import app from '../../src/app.js';
-import { customerToken, adminToken, createCategory, createProduct, createCustomer, prisma } from '../helpers.js';
+import { customerToken, createCategory, createProduct, prisma } from '../helpers.js';
 
 // Stripe é mockado para evitar chamadas reais em testes
 vi.mock('../../src/config/stripe.js', () => ({
@@ -22,7 +22,11 @@ vi.mock('../../src/config/stripe.js', () => ({
   },
 }));
 
-async function createOrderViaApi(customerAccessToken: string, productId: string, paymentMethod = 'CASH_ON_DELIVERY') {
+async function createOrderViaApi(
+  customerAccessToken: string,
+  productId: string,
+  paymentMethod = 'CASH_ON_DELIVERY',
+) {
   const res = await request(app)
     .post('/api/orders')
     .set('Authorization', `Bearer ${customerAccessToken}`)
@@ -72,9 +76,7 @@ describe('POST /api/payments/intent', () => {
   });
 
   it('401 — sem autenticação', async () => {
-    const res = await request(app)
-      .post('/api/payments/intent')
-      .send({ orderId: 'qualquer' });
+    const res = await request(app).post('/api/payments/intent').send({ orderId: 'qualquer' });
 
     expect(res.status).toBe(401);
   });

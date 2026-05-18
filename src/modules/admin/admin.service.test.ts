@@ -2,8 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../config/prisma.js', () => ({
   default: {
-    category: { findMany: vi.fn(), create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), delete: vi.fn() },
-    product: { findMany: vi.fn(), create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    category: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    product: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
     productOption: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
     optionItem: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
     deliveryZone: { findMany: vi.fn(), upsert: vi.fn() },
@@ -13,12 +25,23 @@ vi.mock('../../config/prisma.js', () => ({
 
 import prisma from '../../config/prisma.js';
 import {
-  listCategoriesService, createCategoryService, updateCategoryService, deleteCategoryService,
-  listProductsService, createProductService, updateProductService, deleteProductService, toggleProductService,
-  createProductOptionService, updateProductOptionService, deleteProductOptionService,
-  createOptionItemService, updateOptionItemService, deleteOptionItemService,
-  listDeliveryZonesService, upsertDeliveryZoneService,
-  getStoreConfigService, updateStoreConfigService,
+  listCategoriesService,
+  createCategoryService,
+  updateCategoryService,
+  deleteCategoryService,
+  updateProductService,
+  deleteProductService,
+  toggleProductService,
+  createProductOptionService,
+  updateProductOptionService,
+  deleteProductOptionService,
+  createOptionItemService,
+  updateOptionItemService,
+  deleteOptionItemService,
+  listDeliveryZonesService,
+  upsertDeliveryZoneService,
+  getStoreConfigService,
+  updateStoreConfigService,
 } from './admin.service.js';
 
 const mockCategory = { id: 'cat1', name: 'Burgers', slug: 'burgers', position: 1, active: true };
@@ -41,7 +64,12 @@ describe('listCategoriesService', () => {
 describe('createCategoryService', () => {
   it('cria e retorna categoria', async () => {
     vi.mocked(prisma.category.create).mockResolvedValue(mockCategory as any);
-    const result = await createCategoryService({ name: 'Burgers', slug: 'burgers', position: 1, active: true });
+    const result = await createCategoryService({
+      name: 'Burgers',
+      slug: 'burgers',
+      position: 1,
+      active: true,
+    });
     expect(result.slug).toBe('burgers');
   });
 });
@@ -49,9 +77,17 @@ describe('createCategoryService', () => {
 describe('updateCategoryService', () => {
   it('atualiza categoria existente', async () => {
     vi.mocked(prisma.category.findUnique).mockResolvedValue(mockCategory as any);
-    vi.mocked(prisma.category.update).mockResolvedValue({ ...mockCategory, name: 'Burgers 2' } as any);
+    vi.mocked(prisma.category.update).mockResolvedValue({
+      ...mockCategory,
+      name: 'Burgers 2',
+    } as any);
 
-    const result = await updateCategoryService('cat1', { name: 'Burgers 2', slug: 'burgers', position: 1, active: true });
+    const result = await updateCategoryService('cat1', {
+      name: 'Burgers 2',
+      slug: 'burgers',
+      position: 1,
+      active: true,
+    });
 
     expect(result.name).toBe('Burgers 2');
   });
@@ -59,15 +95,17 @@ describe('updateCategoryService', () => {
   it('lança 404 quando categoria não existe', async () => {
     vi.mocked(prisma.category.findUnique).mockResolvedValue(null);
 
-    await expect(updateCategoryService('missing', { name: 'X', slug: 'x', position: 0, active: true }))
-      .rejects.toMatchObject({ statusCode: 404, code: 'CATEGORY_NOT_FOUND' });
+    await expect(
+      updateCategoryService('missing', { name: 'X', slug: 'x', position: 0, active: true }),
+    ).rejects.toMatchObject({ statusCode: 404, code: 'CATEGORY_NOT_FOUND' });
   });
 });
 
 describe('deleteCategoryService', () => {
   it('deleta categoria sem produtos', async () => {
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
-      ...mockCategory, _count: { products: 0 },
+      ...mockCategory,
+      _count: { products: 0 },
     } as any);
     vi.mocked(prisma.category.delete).mockResolvedValue(mockCategory as any);
 
@@ -78,18 +116,23 @@ describe('deleteCategoryService', () => {
 
   it('lança 409 quando categoria tem produtos', async () => {
     vi.mocked(prisma.category.findUnique).mockResolvedValue({
-      ...mockCategory, _count: { products: 3 },
+      ...mockCategory,
+      _count: { products: 3 },
     } as any);
 
-    await expect(deleteCategoryService('cat1'))
-      .rejects.toMatchObject({ statusCode: 409, code: 'CATEGORY_HAS_PRODUCTS' });
+    await expect(deleteCategoryService('cat1')).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'CATEGORY_HAS_PRODUCTS',
+    });
   });
 
   it('lança 404 quando categoria não existe', async () => {
     vi.mocked(prisma.category.findUnique).mockResolvedValue(null);
 
-    await expect(deleteCategoryService('missing'))
-      .rejects.toMatchObject({ statusCode: 404, code: 'CATEGORY_NOT_FOUND' });
+    await expect(deleteCategoryService('missing')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'CATEGORY_NOT_FOUND',
+    });
   });
 });
 
@@ -101,7 +144,10 @@ describe('updateProductService', () => {
     vi.mocked(prisma.product.update).mockResolvedValue({ ...mockProduct, price: 34.9 } as any);
 
     const result = await updateProductService('p1', {
-      categoryId: 'cat1', name: 'Classic', price: 34.9, active: true,
+      categoryId: 'cat1',
+      name: 'Classic',
+      price: 34.9,
+      active: true,
     });
 
     expect(result.price).toBe(34.9);
@@ -110,9 +156,14 @@ describe('updateProductService', () => {
   it('lança 404 quando produto não existe', async () => {
     vi.mocked(prisma.product.findUnique).mockResolvedValue(null);
 
-    await expect(updateProductService('missing', {
-      categoryId: 'cat1', name: 'X', price: 10, active: true,
-    })).rejects.toMatchObject({ statusCode: 404, code: 'PRODUCT_NOT_FOUND' });
+    await expect(
+      updateProductService('missing', {
+        categoryId: 'cat1',
+        name: 'X',
+        price: 10,
+        active: true,
+      }),
+    ).rejects.toMatchObject({ statusCode: 404, code: 'PRODUCT_NOT_FOUND' });
   });
 });
 
@@ -130,7 +181,10 @@ describe('toggleProductService', () => {
   });
 
   it('ativa produto inativo', async () => {
-    vi.mocked(prisma.product.findUnique).mockResolvedValue({ ...mockProduct, active: false } as any);
+    vi.mocked(prisma.product.findUnique).mockResolvedValue({
+      ...mockProduct,
+      active: false,
+    } as any);
     vi.mocked(prisma.product.update).mockResolvedValue({ ...mockProduct, active: true } as any);
 
     const result = await toggleProductService('p1');
@@ -149,7 +203,11 @@ describe('createProductOptionService', () => {
     vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct as any);
     vi.mocked(prisma.productOption.create).mockResolvedValue(mockOption as any);
 
-    const result = await createProductOptionService('p1', { label: 'Ponto', type: 'RADIO', required: true });
+    const result = await createProductOptionService('p1', {
+      label: 'Ponto',
+      type: 'RADIO',
+      required: true,
+    });
 
     expect(prisma.productOption.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ productId: 'p1' }) }),
@@ -160,17 +218,25 @@ describe('createProductOptionService', () => {
   it('lança 404 quando produto não existe', async () => {
     vi.mocked(prisma.product.findUnique).mockResolvedValue(null);
 
-    await expect(createProductOptionService('missing', { label: 'X', type: 'RADIO', required: false }))
-      .rejects.toMatchObject({ statusCode: 404, code: 'PRODUCT_NOT_FOUND' });
+    await expect(
+      createProductOptionService('missing', { label: 'X', type: 'RADIO', required: false }),
+    ).rejects.toMatchObject({ statusCode: 404, code: 'PRODUCT_NOT_FOUND' });
   });
 });
 
 describe('updateProductOptionService', () => {
   it('atualiza opção existente', async () => {
     vi.mocked(prisma.productOption.findUnique).mockResolvedValue(mockOption as any);
-    vi.mocked(prisma.productOption.update).mockResolvedValue({ ...mockOption, label: 'Ponto da carne' } as any);
+    vi.mocked(prisma.productOption.update).mockResolvedValue({
+      ...mockOption,
+      label: 'Ponto da carne',
+    } as any);
 
-    const result = await updateProductOptionService('opt1', { label: 'Ponto da carne', type: 'RADIO', required: true });
+    const result = await updateProductOptionService('opt1', {
+      label: 'Ponto da carne',
+      type: 'RADIO',
+      required: true,
+    });
 
     expect(result.label).toBe('Ponto da carne');
   });
@@ -178,8 +244,9 @@ describe('updateProductOptionService', () => {
   it('lança 404 quando opção não existe', async () => {
     vi.mocked(prisma.productOption.findUnique).mockResolvedValue(null);
 
-    await expect(updateProductOptionService('missing', { label: 'X', type: 'RADIO', required: false }))
-      .rejects.toMatchObject({ statusCode: 404, code: 'OPTION_NOT_FOUND' });
+    await expect(
+      updateProductOptionService('missing', { label: 'X', type: 'RADIO', required: false }),
+    ).rejects.toMatchObject({ statusCode: 404, code: 'OPTION_NOT_FOUND' });
   });
 });
 
@@ -201,8 +268,9 @@ describe('createOptionItemService', () => {
   it('lança 404 quando opção não existe', async () => {
     vi.mocked(prisma.productOption.findUnique).mockResolvedValue(null);
 
-    await expect(createOptionItemService('missing', { name: 'X', additionalPrice: 0 }))
-      .rejects.toMatchObject({ statusCode: 404, code: 'OPTION_NOT_FOUND' });
+    await expect(
+      createOptionItemService('missing', { name: 'X', additionalPrice: 0 }),
+    ).rejects.toMatchObject({ statusCode: 404, code: 'OPTION_NOT_FOUND' });
   });
 });
 
@@ -219,8 +287,10 @@ describe('deleteOptionItemService', () => {
   it('lança 404 quando item não existe', async () => {
     vi.mocked(prisma.optionItem.findUnique).mockResolvedValue(null);
 
-    await expect(deleteOptionItemService('missing'))
-      .rejects.toMatchObject({ statusCode: 404, code: 'ITEM_NOT_FOUND' });
+    await expect(deleteOptionItemService('missing')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'ITEM_NOT_FOUND',
+    });
   });
 });
 
@@ -229,9 +299,15 @@ describe('deleteOptionItemService', () => {
 describe('updateOptionItemService', () => {
   it('atualiza item existente', async () => {
     vi.mocked(prisma.optionItem.findUnique).mockResolvedValue(mockItem as any);
-    vi.mocked(prisma.optionItem.update).mockResolvedValue({ ...mockItem, name: 'Bem passado' } as any);
+    vi.mocked(prisma.optionItem.update).mockResolvedValue({
+      ...mockItem,
+      name: 'Bem passado',
+    } as any);
 
-    const result = await updateOptionItemService('item1', { name: 'Bem passado', additionalPrice: 0 });
+    const result = await updateOptionItemService('item1', {
+      name: 'Bem passado',
+      additionalPrice: 0,
+    });
 
     expect(result.name).toBe('Bem passado');
   });
@@ -239,8 +315,9 @@ describe('updateOptionItemService', () => {
   it('lança 404 quando item não existe', async () => {
     vi.mocked(prisma.optionItem.findUnique).mockResolvedValue(null);
 
-    await expect(updateOptionItemService('missing', { name: 'X', additionalPrice: 0 }))
-      .rejects.toMatchObject({ statusCode: 404, code: 'ITEM_NOT_FOUND' });
+    await expect(
+      updateOptionItemService('missing', { name: 'X', additionalPrice: 0 }),
+    ).rejects.toMatchObject({ statusCode: 404, code: 'ITEM_NOT_FOUND' });
   });
 });
 
@@ -259,8 +336,10 @@ describe('deleteProductOptionService', () => {
   it('lança 404 quando opção não existe', async () => {
     vi.mocked(prisma.productOption.findUnique).mockResolvedValue(null);
 
-    await expect(deleteProductOptionService('missing'))
-      .rejects.toMatchObject({ statusCode: 404, code: 'OPTION_NOT_FOUND' });
+    await expect(deleteProductOptionService('missing')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'OPTION_NOT_FOUND',
+    });
   });
 });
 
@@ -279,8 +358,10 @@ describe('deleteProductService', () => {
   it('lança 404 quando produto não existe', async () => {
     vi.mocked(prisma.product.findUnique).mockResolvedValue(null);
 
-    await expect(deleteProductService('missing'))
-      .rejects.toMatchObject({ statusCode: 404, code: 'PRODUCT_NOT_FOUND' });
+    await expect(deleteProductService('missing')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'PRODUCT_NOT_FOUND',
+    });
   });
 });
 
@@ -352,7 +433,10 @@ describe('getStoreConfigService', () => {
 // ─── updateStoreConfigService ─────────────────────────────────────────────────
 
 describe('updateStoreConfigService', () => {
-  const configData = { isOpen: false, openingHours: { seg: { open: '18:00', close: '23:00', closed: false } } };
+  const configData = {
+    isOpen: false,
+    openingHours: { seg: { open: '18:00', close: '23:00', closed: false } },
+  };
 
   it('atualiza configuração existente', async () => {
     vi.mocked(prisma.storeConfig.findFirst).mockResolvedValue({ id: 'cfg1' } as any);

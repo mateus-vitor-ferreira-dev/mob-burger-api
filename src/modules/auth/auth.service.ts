@@ -44,7 +44,12 @@ export async function loginService(data: LoginInput) {
     throw new AppError(MSG.auth.invalidCredentials, HTTP.UNAUTHORIZED, 'INVALID_CREDENTIALS');
   }
 
-  const payload: StaffTokenPayload = { sub: user.id, email: user.email, role: user.role, type: 'staff' };
+  const payload: StaffTokenPayload = {
+    sub: user.id,
+    email: user.email,
+    role: user.role,
+    type: 'staff',
+  };
   const tokens = generateTokens(payload);
 
   return { ...tokens, user: { id: user.id, email: user.email, role: user.role } };
@@ -65,7 +70,11 @@ export async function customerRegisterService(data: CustomerRegisterInput) {
     data: { name: data.name, email: data.email, phone: data.phone, passwordHash },
   });
 
-  const payload: CustomerTokenPayload = { sub: customer.id, email: customer.email, type: 'customer' };
+  const payload: CustomerTokenPayload = {
+    sub: customer.id,
+    email: customer.email,
+    type: 'customer',
+  };
   const tokens = generateTokens(payload);
 
   return { ...tokens, customer: { id: customer.id, name: customer.name, email: customer.email } };
@@ -88,7 +97,11 @@ export async function customerLoginService(data: CustomerLoginInput) {
     throw new AppError(MSG.auth.invalidCredentials, HTTP.UNAUTHORIZED, 'INVALID_CREDENTIALS');
   }
 
-  const payload: CustomerTokenPayload = { sub: customer.id, email: customer.email, type: 'customer' };
+  const payload: CustomerTokenPayload = {
+    sub: customer.id,
+    email: customer.email,
+    type: 'customer',
+  };
   const tokens = generateTokens(payload);
 
   return { ...tokens, customer: { id: customer.id, name: customer.name, email: customer.email } };
@@ -97,12 +110,14 @@ export async function customerLoginService(data: CustomerLoginInput) {
 // ─── Customer — Google OAuth ──────────────────────────────────────────────────
 
 export async function googleAuthService(data: GoogleAuthInput) {
-  const ticket = await googleClient.verifyIdToken({
-    idToken: data.idToken,
-    audience: AUTH_CONFIG.googleClientId,
-  }).catch(() => {
-    throw new AppError(MSG.auth.invalidCredentials, HTTP.UNAUTHORIZED, 'INVALID_GOOGLE_TOKEN');
-  });
+  const ticket = await googleClient
+    .verifyIdToken({
+      idToken: data.idToken,
+      audience: AUTH_CONFIG.googleClientId,
+    })
+    .catch(() => {
+      throw new AppError(MSG.auth.invalidCredentials, HTTP.UNAUTHORIZED, 'INVALID_GOOGLE_TOKEN');
+    });
 
   const googlePayload = ticket.getPayload();
 
@@ -129,7 +144,11 @@ export async function googleAuthService(data: GoogleAuthInput) {
     });
   }
 
-  const payload: CustomerTokenPayload = { sub: customer.id, email: customer.email, type: 'customer' };
+  const payload: CustomerTokenPayload = {
+    sub: customer.id,
+    email: customer.email,
+    type: 'customer',
+  };
   const tokens = generateTokens(payload);
 
   return { ...tokens, customer: { id: customer.id, name: customer.name, email: customer.email } };
@@ -150,15 +169,26 @@ export async function refreshTokenService(data: RefreshTokenInput) {
 
   if (decoded.type === 'staff') {
     const user = await prisma.user.findUnique({ where: { id: decoded.sub } });
-    if (!user) throw new AppError(MSG.auth.invalidRefreshToken, HTTP.UNAUTHORIZED, 'INVALID_REFRESH_TOKEN');
+    if (!user)
+      throw new AppError(MSG.auth.invalidRefreshToken, HTTP.UNAUTHORIZED, 'INVALID_REFRESH_TOKEN');
 
-    const payload: StaffTokenPayload = { sub: user.id, email: user.email, role: user.role, type: 'staff' };
+    const payload: StaffTokenPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      type: 'staff',
+    };
     return generateTokens(payload);
   }
 
   const customer = await prisma.customer.findUnique({ where: { id: decoded.sub } });
-  if (!customer) throw new AppError(MSG.auth.invalidRefreshToken, HTTP.UNAUTHORIZED, 'INVALID_REFRESH_TOKEN');
+  if (!customer)
+    throw new AppError(MSG.auth.invalidRefreshToken, HTTP.UNAUTHORIZED, 'INVALID_REFRESH_TOKEN');
 
-  const payload: CustomerTokenPayload = { sub: customer.id, email: customer.email, type: 'customer' };
+  const payload: CustomerTokenPayload = {
+    sub: customer.id,
+    email: customer.email,
+    type: 'customer',
+  };
   return generateTokens(payload);
 }

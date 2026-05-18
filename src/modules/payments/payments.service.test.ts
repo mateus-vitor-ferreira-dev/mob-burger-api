@@ -17,15 +17,21 @@ import stripe from '../../config/stripe.js';
 import { createPaymentIntentService } from './payments.service.js';
 
 const baseOrder = {
-  id: 'o1', customerId: 'c1', totalPrice: 29.9,
-  paymentStatus: 'PENDING', status: 'AWAITING_PAYMENT',
+  id: 'o1',
+  customerId: 'c1',
+  totalPrice: 29.9,
+  paymentStatus: 'PENDING',
+  status: 'AWAITING_PAYMENT',
 };
 
 beforeEach(() => vi.clearAllMocks());
 
 describe('createPaymentIntentService', () => {
   it('confirma pedido CASH_ON_DELIVERY sem chamar Stripe', async () => {
-    vi.mocked(prisma.order.findUnique).mockResolvedValue({ ...baseOrder, paymentMethod: 'CASH_ON_DELIVERY' } as any);
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({
+      ...baseOrder,
+      paymentMethod: 'CASH_ON_DELIVERY',
+    } as any);
     vi.mocked(prisma.order.update).mockResolvedValue({} as any);
 
     const result = await createPaymentIntentService('c1', 'o1');
@@ -38,7 +44,10 @@ describe('createPaymentIntentService', () => {
   });
 
   it('confirma pedido CARD_ON_DELIVERY sem chamar Stripe', async () => {
-    vi.mocked(prisma.order.findUnique).mockResolvedValue({ ...baseOrder, paymentMethod: 'CARD_ON_DELIVERY' } as any);
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({
+      ...baseOrder,
+      paymentMethod: 'CARD_ON_DELIVERY',
+    } as any);
     vi.mocked(prisma.order.update).mockResolvedValue({} as any);
 
     const result = await createPaymentIntentService('c1', 'o1');
@@ -48,7 +57,10 @@ describe('createPaymentIntentService', () => {
   });
 
   it('cria PaymentIntent PIX e retorna dados do QR Code', async () => {
-    vi.mocked(prisma.order.findUnique).mockResolvedValue({ ...baseOrder, paymentMethod: 'PIX' } as any);
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({
+      ...baseOrder,
+      paymentMethod: 'PIX',
+    } as any);
     vi.mocked(prisma.order.update).mockResolvedValue({} as any);
     vi.mocked(stripe.paymentIntents.create).mockResolvedValue({
       id: 'pi_test',
@@ -75,10 +87,14 @@ describe('createPaymentIntentService', () => {
   });
 
   it('cria PaymentIntent CARD e retorna clientSecret', async () => {
-    vi.mocked(prisma.order.findUnique).mockResolvedValue({ ...baseOrder, paymentMethod: 'CARD' } as any);
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({
+      ...baseOrder,
+      paymentMethod: 'CARD',
+    } as any);
     vi.mocked(prisma.order.update).mockResolvedValue({} as any);
     vi.mocked(stripe.paymentIntents.create).mockResolvedValue({
-      id: 'pi_test', client_secret: 'pi_test_secret',
+      id: 'pi_test',
+      client_secret: 'pi_test_secret',
     } as any);
 
     const result = await createPaymentIntentService('c1', 'o1');
@@ -92,32 +108,47 @@ describe('createPaymentIntentService', () => {
   it('lança 404 quando pedido não existe', async () => {
     vi.mocked(prisma.order.findUnique).mockResolvedValue(null);
 
-    await expect(createPaymentIntentService('c1', 'missing'))
-      .rejects.toMatchObject({ statusCode: 404, code: 'ORDER_NOT_FOUND' });
+    await expect(createPaymentIntentService('c1', 'missing')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'ORDER_NOT_FOUND',
+    });
   });
 
   it('lança 403 quando cliente não é dono do pedido', async () => {
     vi.mocked(prisma.order.findUnique).mockResolvedValue({
-      ...baseOrder, customerId: 'outro_cliente',
+      ...baseOrder,
+      customerId: 'outro_cliente',
     } as any);
 
-    await expect(createPaymentIntentService('c1', 'o1'))
-      .rejects.toMatchObject({ statusCode: 403, code: 'FORBIDDEN' });
+    await expect(createPaymentIntentService('c1', 'o1')).rejects.toMatchObject({
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
   });
 
   it('lança 409 quando pedido já foi pago', async () => {
     vi.mocked(prisma.order.findUnique).mockResolvedValue({
-      ...baseOrder, paymentStatus: 'PAID',
+      ...baseOrder,
+      paymentStatus: 'PAID',
     } as any);
 
-    await expect(createPaymentIntentService('c1', 'o1'))
-      .rejects.toMatchObject({ statusCode: 409, code: 'ALREADY_PAID' });
+    await expect(createPaymentIntentService('c1', 'o1')).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'ALREADY_PAID',
+    });
   });
 
   it('calcula amount em centavos corretamente (R$29,90 → 2990)', async () => {
-    vi.mocked(prisma.order.findUnique).mockResolvedValue({ ...baseOrder, paymentMethod: 'CARD', totalPrice: 29.9 } as any);
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({
+      ...baseOrder,
+      paymentMethod: 'CARD',
+      totalPrice: 29.9,
+    } as any);
     vi.mocked(prisma.order.update).mockResolvedValue({} as any);
-    vi.mocked(stripe.paymentIntents.create).mockResolvedValue({ id: 'pi', client_secret: 's' } as any);
+    vi.mocked(stripe.paymentIntents.create).mockResolvedValue({
+      id: 'pi',
+      client_secret: 's',
+    } as any);
 
     await createPaymentIntentService('c1', 'o1');
 
