@@ -1,8 +1,6 @@
 import { beforeEach, afterAll } from 'vitest';
 import { execSync } from 'child_process';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma.js';
 
 // Roda migrations no banco de teste antes de qualquer teste
 try {

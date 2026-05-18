@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import request from 'supertest';
 import app from '../src/app.js';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma.js';
 
 export async function createAdmin(email = 'admin@test.com', password = 'senha123') {
   const hash = await bcrypt.hash(password, 10);
@@ -106,4 +104,4 @@ export async function createOrderForCustomer(
   });
 }
 
-export { prisma };
+export { prisma } from './prisma.js';
