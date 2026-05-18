@@ -8,7 +8,8 @@ import { HTTP } from '../constants/httpStatus.js';
 export interface JwtPayload {
   sub: string;
   email: string;
-  role: string;
+  type: 'staff' | 'customer';
+  role?: string;
 }
 
 export const authMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
@@ -22,7 +23,7 @@ export const authMiddleware = (req: Request, _res: Response, next: NextFunction)
 
   try {
     const payload = jwt.verify(token, AUTH_CONFIG.accessTokenSecret) as JwtPayload;
-    req.user = { id: payload.sub, email: payload.email, role: payload.role };
+    req.user = { id: payload.sub, email: payload.email, type: payload.type, role: payload.role };
     next();
   } catch {
     throw new AppError(MSG.auth.tokenExpired, HTTP.UNAUTHORIZED, 'TOKEN_EXPIRED');
@@ -31,6 +32,20 @@ export const authMiddleware = (req: Request, _res: Response, next: NextFunction)
 
 export const requireAdmin = (req: Request, _res: Response, next: NextFunction): void => {
   if (req.user?.role !== 'ADMIN') {
+    throw new AppError(MSG.auth.forbidden, HTTP.FORBIDDEN, 'FORBIDDEN');
+  }
+  next();
+};
+
+export const requireStaff = (req: Request, _res: Response, next: NextFunction): void => {
+  if (req.user?.type !== 'staff') {
+    throw new AppError(MSG.auth.forbidden, HTTP.FORBIDDEN, 'FORBIDDEN');
+  }
+  next();
+};
+
+export const requireCustomer = (req: Request, _res: Response, next: NextFunction): void => {
+  if (req.user?.type !== 'customer') {
     throw new AppError(MSG.auth.forbidden, HTTP.FORBIDDEN, 'FORBIDDEN');
   }
   next();

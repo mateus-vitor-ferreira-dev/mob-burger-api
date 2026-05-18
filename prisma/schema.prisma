@@ -70,12 +70,16 @@ model OptionItem {
 }
 
 model Customer {
-  id         String         @id @default(cuid())
-  name       String
-  phone      String
-  createdAt  DateTime       @default(now())
-  orders     Order[]
-  deliveries DeliveryInfo[]
+  id           String         @id @default(cuid())
+  name         String
+  email        String         @unique
+  passwordHash String?
+  googleId     String?        @unique
+  phone        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  orders       Order[]
+  deliveries   DeliveryInfo[]
 }
 
 model Order {

@@ -19,15 +19,9 @@ const deliveryInfoSchema = z.object({
   zoneId: z.string().cuid().optional(),
 });
 
-const customerSchema = z.object({
-  name: z.string().min(2),
-  phone: z.string().min(10).max(15),
-});
-
 export const createOrderSchema = z.object({
   type: z.enum(['DELIVERY', 'PICKUP']),
   paymentMethod: z.enum(['PIX', 'CARD', 'CASH_ON_DELIVERY', 'CARD_ON_DELIVERY']),
-  customer: customerSchema,
   items: z.array(orderItemSchema).min(1),
   delivery: deliveryInfoSchema.optional(),
 }).refine(

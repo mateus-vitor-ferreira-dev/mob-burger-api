@@ -6,23 +6,53 @@ import { generateDailyOrderNumber } from '../../utils/orderNumber.js';
 import { broadcastOrderUpdate } from './orders.sse.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
 
-export async function createOrderService(data: CreateOrderInput) {
+// Transições de status permitidas pelo operador
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  AWAITING_PAYMENT: ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED:        ['PREPARING', 'CANCELLED'],
+  PREPARING:        ['READY', 'CANCELLED'],
+  READY:            ['OUT_FOR_DELIVERY', 'PICKED_UP', 'CANCELLED'],
+  OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
+  DELIVERED:        [],
+  PICKED_UP:        [],
+  CANCELLED:        [],
+};
+
+export async function createOrderService(customerId: string, data: CreateOrderInput) {
+  const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+  if (!customer) throw new AppError(MSG.order.notFound, HTTP.NOT_FOUND, 'CUSTOMER_NOT_FOUND');
+
+  if (!customer.phone) {
+    throw new AppError(MSG.customer.phoneRequired, HTTP.UNPROCESSABLE, 'PHONE_REQUIRED');
+  }
+
   const config = await prisma.storeConfig.findFirst();
   if (config && !config.isOpen) {
     throw new AppError(MSG.order.storeClosed, HTTP.UNPROCESSABLE, 'STORE_CLOSED');
   }
 
+  const productIds = data.items.map((i) => i.productId);
   const products = await prisma.product.findMany({
-    where: { id: { in: data.items.map((i) => i.productId) }, active: true },
+    where: { id: { in: productIds }, active: true },
   });
 
-  if (products.length !== data.items.length) {
+  if (products.length !== new Set(productIds).size) {
     throw new AppError(MSG.menu.productUnavailable, HTTP.BAD_REQUEST, 'PRODUCT_UNAVAILABLE');
   }
 
+  // Busca todos os optionItems para calcular adicionais
+  const optionItemIds = data.items.flatMap((i) => i.options.map((o) => o.optionItemId));
+  const optionItems = optionItemIds.length
+    ? await prisma.optionItem.findMany({ where: { id: { in: optionItemIds } } })
+    : [];
+
   const itemsTotal = data.items.reduce((sum, item) => {
     const product = products.find((p) => p.id === item.productId)!;
-    return sum + product.price * item.quantity;
+    const optionsTotal = item.options.reduce((oSum, opt) => {
+      const oi = optionItems.find((x) => x.id === opt.optionItemId);
+      return oSum + (oi?.additionalPrice ?? 0);
+    }, 0);
+    return sum + (product.price + optionsTotal) * item.quantity;
   }, 0);
 
   let deliveryFee = 0;
@@ -31,18 +61,13 @@ export async function createOrderService(data: CreateOrderInput) {
     deliveryFee = zone?.fee ?? 0;
   }
 
-  const totalPrice = itemsTotal + deliveryFee;
+  const totalPrice = Number((itemsTotal + deliveryFee).toFixed(2));
   const orderNumber = await generateDailyOrderNumber();
-
-  let customer = await prisma.customer.findFirst({ where: { phone: data.customer.phone } });
-  if (!customer) {
-    customer = await prisma.customer.create({ data: data.customer });
-  }
 
   const order = await prisma.order.create({
     data: {
       orderNumber,
-      customerId: customer.id,
+      customerId,
       type: data.type,
       totalPrice,
       paymentMethod: data.paymentMethod,
@@ -64,7 +89,7 @@ export async function createOrderService(data: CreateOrderInput) {
         ? {
             delivery: {
               create: {
-                customerId: customer.id,
+                customerId,
                 street: data.delivery.street,
                 number: data.delivery.number,
                 neighborhood: data.delivery.neighborhood,
@@ -78,9 +103,11 @@ export async function createOrderService(data: CreateOrderInput) {
     include: {
       items: { include: { product: true, options: { include: { optionItem: true } } } },
       delivery: { include: { zone: true } },
-      customer: true,
+      customer: { select: { id: true, name: true, phone: true, email: true } },
     },
   });
+
+  broadcastOrderUpdate({ type: 'new_order', order });
 
   return order;
 }
@@ -91,12 +118,23 @@ export async function getOrderService(id: string) {
     include: {
       items: { include: { product: true, options: { include: { optionItem: true } } } },
       delivery: { include: { zone: true } },
-      customer: true,
+      customer: { select: { id: true, name: true, phone: true } },
     },
   });
 
   if (!order) throw new AppError(MSG.order.notFound, HTTP.NOT_FOUND, 'ORDER_NOT_FOUND');
   return order;
+}
+
+export async function myOrdersService(customerId: string) {
+  return prisma.order.findMany({
+    where: { customerId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      items: { include: { product: { select: { id: true, name: true, imageUrl: true } } } },
+      delivery: true,
+    },
+  });
 }
 
 export async function listOrdersService(status?: string) {
@@ -106,7 +144,7 @@ export async function listOrdersService(status?: string) {
     include: {
       items: { include: { product: true } },
       delivery: true,
-      customer: true,
+      customer: { select: { id: true, name: true, phone: true } },
     },
   });
 }
@@ -115,13 +153,18 @@ export async function updateOrderStatusService(id: string, data: UpdateStatusInp
   const order = await prisma.order.findUnique({ where: { id } });
   if (!order) throw new AppError(MSG.order.notFound, HTTP.NOT_FOUND, 'ORDER_NOT_FOUND');
 
+  const allowed = VALID_TRANSITIONS[order.status] ?? [];
+  if (!allowed.includes(data.status)) {
+    throw new AppError(MSG.order.invalidStatus, HTTP.UNPROCESSABLE, 'INVALID_STATUS_TRANSITION');
+  }
+
   const updated = await prisma.order.update({
     where: { id },
     data: { status: data.status },
     include: {
       items: { include: { product: true } },
       delivery: true,
-      customer: true,
+      customer: { select: { id: true, name: true, phone: true } },
     },
   });
 
