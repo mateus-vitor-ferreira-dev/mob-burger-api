@@ -15,7 +15,11 @@ export async function handleStripeWebhook(req: Request, res: Response) {
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(req.body as Buffer, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      req.body as Buffer,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET,
+    );
   } catch {
     throw new AppError(MSG.payment.webhookInvalid, HTTP.BAD_REQUEST, 'WEBHOOK_INVALID');
   }
@@ -28,7 +32,11 @@ export async function handleStripeWebhook(req: Request, res: Response) {
       const updated = await prisma.order.update({
         where: { id: orderId },
         data: { paymentStatus: 'PAID', status: 'CONFIRMED' },
-        include: { customer: true, items: { include: { product: true } }, delivery: true },
+        include: {
+          customer: { select: { id: true, name: true, phone: true } },
+          items: { include: { product: true } },
+          delivery: true,
+        },
       });
 
       broadcastOrderUpdate({ type: 'new_order', order: updated });
@@ -40,9 +48,10 @@ export async function handleStripeWebhook(req: Request, res: Response) {
     const orderId = intent.metadata?.orderId;
 
     if (orderId) {
+      // Marca como falha mas mantém o pedido aberto para o cliente tentar novamente
       await prisma.order.update({
         where: { id: orderId },
-        data: { paymentStatus: 'FAILED', status: 'CANCELLED' },
+        data: { paymentStatus: 'FAILED' },
       });
     }
   }

@@ -4,6 +4,6 @@ import { success } from '../../utils/apiResponse.js';
 
 export async function createPaymentIntent(req: Request, res: Response) {
   const { orderId } = req.body as { orderId: string };
-  const result = await createPaymentIntentService(orderId);
+  const result = await createPaymentIntentService(req.user!.id, orderId);
   return success(res, result);
 }

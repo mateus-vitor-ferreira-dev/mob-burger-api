@@ -4,10 +4,19 @@ export const MSG = {
     unauthorized: 'Não autorizado. Faça login para continuar.',
     forbidden: 'Você não tem permissão para realizar esta ação.',
     tokenExpired: 'Sessão expirada. Faça login novamente.',
+    invalidRefreshToken: 'Token de refresh inválido ou expirado.',
+  },
+  customer: {
+    emailAlreadyExists: 'Este e-mail já está cadastrado.',
+    phoneRequired: 'Informe seu telefone para finalizar o pedido.',
+    registered: 'Conta criada com sucesso.',
+    googleLinked: 'Login realizado com sucesso via Google.',
+    passwordNotSet: 'Esta conta usa login pelo Google. Acesse via Google.',
   },
   order: {
     notFound: 'Pedido não encontrado.',
-    storeClosed: 'A loja está fechada no momento. Tente novamente durante o horário de funcionamento.',
+    storeClosed:
+      'A loja está fechada no momento. Tente novamente durante o horário de funcionamento.',
     pixExpired: 'O QR Code Pix expirou. Por favor, refaça o pedido.',
     created: 'Pedido criado com sucesso.',
     statusUpdated: 'Status do pedido atualizado.',

@@ -1,17 +1,28 @@
 import type { Request, Response } from 'express';
-import { createOrderService, getOrderService, listOrdersService, updateOrderStatusService } from './orders.service.js';
+import {
+  createOrderService,
+  getOrderService,
+  myOrdersService,
+  listOrdersService,
+  updateOrderStatusService,
+} from './orders.service.js';
 import { success } from '../../utils/apiResponse.js';
 import { HTTP } from '../../constants/httpStatus.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
 
 export async function createOrder(req: Request, res: Response) {
-  const order = await createOrderService(req.body as CreateOrderInput);
+  const order = await createOrderService(req.user!.id, req.body as CreateOrderInput);
   return success(res, order, HTTP.CREATED);
 }
 
 export async function getOrder(req: Request, res: Response) {
   const order = await getOrderService(req.params.id);
   return success(res, order);
+}
+
+export async function myOrders(req: Request, res: Response) {
+  const orders = await myOrdersService(req.user!.id);
+  return success(res, orders);
 }
 
 export async function listOrders(req: Request, res: Response) {

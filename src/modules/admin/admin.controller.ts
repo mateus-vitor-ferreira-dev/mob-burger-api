@@ -2,16 +2,60 @@ import type { Request, Response } from 'express';
 import * as adminService from './admin.service.js';
 import { success } from '../../utils/apiResponse.js';
 import { HTTP } from '../../constants/httpStatus.js';
-import type { ProductInput, CategoryInput, DeliveryZoneInput, StoreConfigInput } from './admin.schema.js';
+import type {
+  CategoryInput,
+  ProductInput,
+  ProductOptionInput,
+  OptionItemInput,
+  DeliveryZoneInput,
+  StoreConfigInput,
+} from './admin.schema.js';
+
+// ─── Categorias ───────────────────────────────────────────────────────────────
+
+export async function listCategories(_req: Request, res: Response) {
+  return success(res, await adminService.listCategoriesService());
+}
+
+export async function createCategory(req: Request, res: Response) {
+  return success(
+    res,
+    await adminService.createCategoryService(req.body as CategoryInput),
+    HTTP.CREATED,
+  );
+}
+
+export async function updateCategory(req: Request, res: Response) {
+  return success(
+    res,
+    await adminService.updateCategoryService(req.params.id, req.body as CategoryInput),
+  );
+}
+
+export async function deleteCategory(req: Request, res: Response) {
+  await adminService.deleteCategoryService(req.params.id);
+  return res.status(HTTP.NO_CONTENT).send();
+}
+
+// ─── Produtos ─────────────────────────────────────────────────────────────────
+
+export async function listProducts(_req: Request, res: Response) {
+  return success(res, await adminService.listProductsService());
+}
 
 export async function createProduct(req: Request, res: Response) {
-  const product = await adminService.createProductService(req.body as ProductInput);
-  return success(res, product, HTTP.CREATED);
+  return success(
+    res,
+    await adminService.createProductService(req.body as ProductInput),
+    HTTP.CREATED,
+  );
 }
 
 export async function updateProduct(req: Request, res: Response) {
-  const product = await adminService.updateProductService(req.params.id, req.body as ProductInput);
-  return success(res, product);
+  return success(
+    res,
+    await adminService.updateProductService(req.params.id, req.body as ProductInput),
+  );
 }
 
 export async function deleteProduct(req: Request, res: Response) {
@@ -20,31 +64,79 @@ export async function deleteProduct(req: Request, res: Response) {
 }
 
 export async function toggleProduct(req: Request, res: Response) {
-  const product = await adminService.toggleProductService(req.params.id);
-  return success(res, product);
+  return success(res, await adminService.toggleProductService(req.params.id));
 }
 
-export async function createCategory(req: Request, res: Response) {
-  const category = await adminService.createCategoryService(req.body as CategoryInput);
-  return success(res, category, HTTP.CREATED);
+// ─── Opções de personalização ─────────────────────────────────────────────────
+
+export async function createProductOption(req: Request, res: Response) {
+  return success(
+    res,
+    await adminService.createProductOptionService(
+      req.params.productId,
+      req.body as ProductOptionInput,
+    ),
+    HTTP.CREATED,
+  );
 }
+
+export async function updateProductOption(req: Request, res: Response) {
+  return success(
+    res,
+    await adminService.updateProductOptionService(
+      req.params.optionId,
+      req.body as ProductOptionInput,
+    ),
+  );
+}
+
+export async function deleteProductOption(req: Request, res: Response) {
+  await adminService.deleteProductOptionService(req.params.optionId);
+  return res.status(HTTP.NO_CONTENT).send();
+}
+
+// ─── Itens de opção ───────────────────────────────────────────────────────────
+
+export async function createOptionItem(req: Request, res: Response) {
+  return success(
+    res,
+    await adminService.createOptionItemService(req.params.optionId, req.body as OptionItemInput),
+    HTTP.CREATED,
+  );
+}
+
+export async function updateOptionItem(req: Request, res: Response) {
+  return success(
+    res,
+    await adminService.updateOptionItemService(req.params.itemId, req.body as OptionItemInput),
+  );
+}
+
+export async function deleteOptionItem(req: Request, res: Response) {
+  await adminService.deleteOptionItemService(req.params.itemId);
+  return res.status(HTTP.NO_CONTENT).send();
+}
+
+// ─── Zonas de entrega ─────────────────────────────────────────────────────────
 
 export async function listDeliveryZones(_req: Request, res: Response) {
-  const zones = await adminService.listDeliveryZonesService();
-  return success(res, zones);
+  return success(res, await adminService.listDeliveryZonesService());
 }
 
 export async function upsertDeliveryZone(req: Request, res: Response) {
-  const zone = await adminService.upsertDeliveryZoneService(req.body as DeliveryZoneInput);
-  return success(res, zone, HTTP.CREATED);
+  return success(
+    res,
+    await adminService.upsertDeliveryZoneService(req.body as DeliveryZoneInput),
+    HTTP.CREATED,
+  );
 }
 
+// ─── Config da loja ───────────────────────────────────────────────────────────
+
 export async function getStoreConfig(_req: Request, res: Response) {
-  const config = await adminService.getStoreConfigService();
-  return success(res, config);
+  return success(res, await adminService.getStoreConfigService());
 }
 
 export async function updateStoreConfig(req: Request, res: Response) {
-  const config = await adminService.updateStoreConfigService(req.body as StoreConfigInput);
-  return success(res, config);
+  return success(res, await adminService.updateStoreConfigService(req.body as StoreConfigInput));
 }
