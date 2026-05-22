@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { OAuth2Client } from 'google-auth-library';
 import prisma from '../../config/prisma.js';
 import { AUTH_CONFIG } from '../../config/auth.js';
 import AppError from '../../utils/AppError.js';
@@ -14,7 +13,30 @@ import type {
   RefreshTokenInput,
 } from './auth.schema.js';
 
-const googleClient = new OAuth2Client(AUTH_CONFIG.googleClientId);
+interface GoogleUserInfo {
+  sub: string;
+  email: string;
+  name?: string;
+  email_verified?: boolean;
+}
+
+async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
+  const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    throw new AppError(MSG.auth.invalidCredentials, HTTP.UNAUTHORIZED, 'INVALID_GOOGLE_TOKEN');
+  }
+
+  const data = (await res.json()) as GoogleUserInfo;
+
+  if (!data.email) {
+    throw new AppError(MSG.auth.invalidCredentials, HTTP.UNAUTHORIZED, 'INVALID_GOOGLE_TOKEN');
+  }
+
+  return data;
+}
 
 type StaffTokenPayload = { sub: string; email: string; role: string; type: 'staff' };
 type CustomerTokenPayload = { sub: string; email: string; type: 'customer' };
@@ -110,22 +132,7 @@ export async function customerLoginService(data: CustomerLoginInput) {
 // ─── Customer — Google OAuth ──────────────────────────────────────────────────
 
 export async function googleAuthService(data: GoogleAuthInput) {
-  const ticket = await googleClient
-    .verifyIdToken({
-      idToken: data.idToken,
-      audience: AUTH_CONFIG.googleClientId,
-    })
-    .catch(() => {
-      throw new AppError(MSG.auth.invalidCredentials, HTTP.UNAUTHORIZED, 'INVALID_GOOGLE_TOKEN');
-    });
-
-  const googlePayload = ticket.getPayload();
-
-  if (!googlePayload?.email) {
-    throw new AppError(MSG.auth.invalidCredentials, HTTP.UNAUTHORIZED, 'INVALID_GOOGLE_TOKEN');
-  }
-
-  const { sub: googleId, email, name } = googlePayload;
+  const { sub: googleId, email, name } = await getGoogleUserInfo(data.accessToken);
 
   let customer = await prisma.customer.findFirst({
     where: { OR: [{ googleId }, { email }] },
@@ -152,6 +159,45 @@ export async function googleAuthService(data: GoogleAuthInput) {
   const tokens = generateTokens(payload);
 
   return { ...tokens, customer: { id: customer.id, name: customer.name, email: customer.email } };
+}
+
+// ─── Customer — me ───────────────────────────────────────────────────────────
+
+export async function getMeService(customerId: string) {
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    select: { id: true, name: true, email: true, phone: true, googleId: true },
+  });
+  if (!customer) {
+    throw new AppError('Cliente não encontrado', HTTP.NOT_FOUND, 'CUSTOMER_NOT_FOUND');
+  }
+  return { customer: { ...customer, hasPassword: !!customer.googleId === false } };
+}
+
+export async function updateMeService(customerId: string, data: { name?: string; phone?: string }) {
+  const customer = await prisma.customer.update({
+    where: { id: customerId },
+    data: { ...(data.name && { name: data.name }), ...(data.phone !== undefined && { phone: data.phone }) },
+    select: { id: true, name: true, email: true, phone: true },
+  });
+  return { customer };
+}
+
+export async function changePasswordService(customerId: string, currentPassword: string, newPassword: string) {
+  const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+  if (!customer) {
+    throw new AppError('Cliente não encontrado', HTTP.NOT_FOUND, 'CUSTOMER_NOT_FOUND');
+  }
+  if (!customer.passwordHash) {
+    throw new AppError('Conta vinculada ao Google não possui senha', HTTP.BAD_REQUEST, 'NO_PASSWORD');
+  }
+  const match = await bcrypt.compare(currentPassword, customer.passwordHash);
+  if (!match) {
+    throw new AppError('Senha atual incorreta', HTTP.UNAUTHORIZED, 'WRONG_PASSWORD');
+  }
+  const newHash = await bcrypt.hash(newPassword, AUTH_CONFIG.bcryptRounds);
+  await prisma.customer.update({ where: { id: customerId }, data: { passwordHash: newHash } });
+  return { message: 'Senha alterada com sucesso' };
 }
 
 // ─── Refresh token ────────────────────────────────────────────────────────────
