@@ -1,7 +1,25 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
+async function upsertProduct(data: {
+  categoryId: string;
+  name: string;
+  description?: string;
+  price: number;
+  imageUrl?: string;
+}) {
+  const existing = await prisma.product.findFirst({ where: { name: data.name } });
+  if (existing) {
+    return prisma.product.update({ where: { id: existing.id }, data });
+  }
+  return prisma.product.create({ data });
+}
 
 async function main() {
   console.log('Iniciando seed da Mob Burger...');
@@ -24,204 +42,286 @@ async function main() {
 
   // ─── Categorias ───────────────────────────────────────────────────────────────
 
-  const burgers = await prisma.category.upsert({
+  const catBurgers = await prisma.category.upsert({
     where: { slug: 'burgers' },
-    update: {},
-    create: { name: 'Burgers', slug: 'burgers', position: 1 },
+    update: { name: 'Smash Burgers', position: 1 },
+    create: { name: 'Smash Burgers', slug: 'burgers', position: 1 },
   });
 
-  const combos = await prisma.category.upsert({
+  const catChicken = await prisma.category.upsert({
+    where: { slug: 'chicken' },
+    update: {},
+    create: { name: 'Chicken', slug: 'chicken', position: 2 },
+  });
+
+  const catCombos = await prisma.category.upsert({
     where: { slug: 'combos' },
-    update: {},
-    create: { name: 'Combos', slug: 'combos', position: 2 },
+    update: { position: 3 },
+    create: { name: 'Combos', slug: 'combos', position: 3 },
   });
 
-  const porcoes = await prisma.category.upsert({
-    where: { slug: 'porcoes' },
-    update: {},
-    create: { name: 'Porções', slug: 'porcoes', position: 3 },
-  });
-
-  const bebidas = await prisma.category.upsert({
+  const catBebidas = await prisma.category.upsert({
     where: { slug: 'bebidas' },
-    update: {},
+    update: { position: 4 },
     create: { name: 'Bebidas', slug: 'bebidas', position: 4 },
   });
 
-  // ─── Produtos (só cria se não existir) ────────────────────────────────────────
+  const catSobremesas = await prisma.category.upsert({
+    where: { slug: 'sobremesas' },
+    update: {},
+    create: { name: 'Sobremesas', slug: 'sobremesas', position: 5 },
+  });
 
-  const mobClassic = await prisma.product.findFirst({ where: { name: 'Mob Classic' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: burgers.id,
-        name: 'Mob Classic',
-        description: 'Blend artesanal 180g, queijo cheddar, alface, tomate, maionese da casa.',
-        price: 28.9,
-      },
-    });
+  await prisma.category.upsert({
+    where: { slug: 'porcoes' },
+    update: { position: 6 },
+    create: { name: 'Porções', slug: 'porcoes', position: 6 },
+  });
 
-  const mobSmash = await prisma.product.findFirst({ where: { name: 'Mob Smash' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: burgers.id,
-        name: 'Mob Smash',
-        description: 'Dois smash patties 90g, queijo americano duplo, pickles, mostarda e ketchup.',
-        price: 32.9,
-      },
-    });
+  // ─── Smash Burgers ────────────────────────────────────────────────────────────
 
-  const mobBacon = await prisma.product.findFirst({ where: { name: 'Mob Bacon' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: burgers.id,
-        name: 'Mob Bacon',
-        description: 'Blend 180g, bacon crocante, cheddar cremoso, cebola caramelizada.',
-        price: 34.9,
-      },
-    });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Classic',
+    description: 'Blend bovino 110g, cheddar/mussarela e molho especial da casa.',
+    price: 22.9,
+    imageUrl: '/burgers/mob-classic.png',
+  });
 
-  await prisma.product.findFirst({ where: { name: 'Combo Mob Classic' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: combos.id,
-        name: 'Combo Mob Classic',
-        description: 'Mob Classic + Fritas M + Refrigerante 350ml.',
-        price: 42.9,
-      },
-    });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Bacon',
+    description: 'Blend bovino 110g, bacon defumado crocante em tiras, dupla fatia cheddar/mussarela e molho especial.',
+    price: 27.9,
+    imageUrl: '/burgers/mob-bacon.png',
+  });
 
-  await prisma.product.findFirst({ where: { name: 'Combo Mob Smash' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: combos.id,
-        name: 'Combo Mob Smash',
-        description: 'Mob Smash + Fritas M + Refrigerante 350ml.',
-        price: 46.9,
-      },
-    });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Godfather',
+    description: 'Duplo blend 110g, bacon defumado crocante, ovo frito, dupla fatia cheddar/mussarela e molho especial.',
+    price: 39.9,
+    imageUrl: '/burgers/mob-godfather.png',
+  });
 
-  await prisma.product.findFirst({ where: { name: 'Fritas P' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: porcoes.id,
-        name: 'Fritas P',
-        description: 'Porção pequena de batatas fritas crocantes.',
-        price: 10.9,
-      },
-    });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Sunrise',
+    description: 'Blend bovino 110g, ovo frito, presunto, queijo mussarela/cheddar e molho especial.',
+    price: 26.9,
+    imageUrl: '/burgers/mob-sunrise.png',
+  });
 
-  await prisma.product.findFirst({ where: { name: 'Fritas G' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: porcoes.id,
-        name: 'Fritas G',
-        description: 'Porção grande de batatas fritas crocantes.',
-        price: 16.9,
-      },
-    });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Duplo Bacon BBQ',
+    description: 'Duplo blend 110g, bacon defumado crocante em tiras, duplo queijo mussarela/cheddar e molho BBQ.',
+    price: 37.9,
+    imageUrl: '/burgers/mob-chaos.png',
+  });
 
-  await prisma.product.findFirst({ where: { name: 'Onion Rings' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: porcoes.id,
-        name: 'Onion Rings',
-        description: 'Anéis de cebola empanados e crocantes.',
-        price: 18.9,
-      },
-    });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Salad',
+    description: 'Blend bovino 110g, duplo queijo mussarela/cheddar, alface, tomate e molho da casa.',
+    price: 26.9,
+    imageUrl: '/burgers/mob-deli.png',
+  });
 
-  await prisma.product.findFirst({ where: { name: 'Refrigerante Lata' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: bebidas.id,
-        name: 'Refrigerante Lata',
-        description: 'Coca-Cola, Guaraná ou Sprite — 350ml.',
-        price: 6.0,
-      },
-    });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Italian',
+    description: 'Blend bovino 110g, queijo mussarela e cheddar, presunto e molho especial.',
+    price: 27.9,
+    imageUrl: '/burgers/mob-italian.png',
+  });
 
-  await prisma.product.findFirst({ where: { name: 'Suco Natural' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: bebidas.id,
-        name: 'Suco Natural',
-        description: 'Laranja, limão ou maracujá — 400ml.',
-        price: 9.9,
-      },
-    });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Brunch',
+    description: 'Blend bovino 110g, ovo frito, presunto, duplo queijo mussarela/cheddar e molho especial.',
+    price: 29.9,
+    imageUrl: '/burgers/mob-brunch.png',
+  });
 
-  await prisma.product.findFirst({ where: { name: 'Água Mineral' } })
-    ?? await prisma.product.create({
-      data: {
-        categoryId: bebidas.id,
-        name: 'Água Mineral',
-        description: 'Com ou sem gás — 500ml.',
-        price: 4.0,
-      },
-    });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob King',
+    description: 'Duplo blend 110g, ovo frito, bacon defumado crocante, dupla fatia cheddar/mussarela, molho especial e alface.',
+    price: 39.9,
+    imageUrl: '/burgers/mob-king.png',
+  });
 
-  // ─── Opções do Mob Classic ─────────────────────────────────────────────────
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Street',
+    description: 'Blend bovino 110g, queijo mussarela/cheddar, alface, tomate e molho especial.',
+    price: 24.9,
+    imageUrl: '/burgers/mob-street.png',
+  });
 
-  const classicTemOpcoes = await prisma.productOption.count({ where: { productId: mobClassic.id } });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Beast',
+    description: 'Duplo blend 110g, bacon defumado crocante, ovo frito, dupla fatia cheddar/mussarela, presunto, alface, tomate e molho especial. O monstro.',
+    price: 44.9,
+    imageUrl: '/burgers/mob-beast.png',
+  });
 
-  if (classicTemOpcoes === 0) {
-    const ponto = await prisma.productOption.create({
-      data: { productId: mobClassic.id, label: 'Ponto da carne', type: 'RADIO', required: true },
-    });
-    await prisma.optionItem.createMany({
-      data: [
-        { optionId: ponto.id, name: 'Mal passado', additionalPrice: 0 },
-        { optionId: ponto.id, name: 'Ao ponto', additionalPrice: 0 },
-        { optionId: ponto.id, name: 'Bem passado', additionalPrice: 0 },
-      ],
-    });
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Joker',
+    description: 'Blend bovino 110g, bacon defumado crocante em tiras, queijo mussarela/cheddar, alface e molho especial. Imprevisível.',
+    price: 27.9,
+    imageUrl: '/burgers/mob-joker.png',
+  });
 
-    const adicionais = await prisma.productOption.create({
-      data: { productId: mobClassic.id, label: 'Adicionais', type: 'CHECKBOX', required: false },
-    });
-    await prisma.optionItem.createMany({
-      data: [
-        { optionId: adicionais.id, name: 'Bacon', additionalPrice: 4.0 },
-        { optionId: adicionais.id, name: 'Ovo frito', additionalPrice: 3.0 },
-        { optionId: adicionais.id, name: 'Queijo extra', additionalPrice: 2.5 },
-        { optionId: adicionais.id, name: 'Cebola caramelizada', additionalPrice: 2.0 },
-      ],
-    });
-  }
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Original',
+    description: 'Simplismo elevado. Blend, bacon, cheddar, alface, tomate e molho especial.',
+    price: 26,
+    imageUrl: '/burgers/mob-original.png',
+  });
 
-  // ─── Opções do Mob Smash ──────────────────────────────────────────────────
+  await upsertProduct({
+    categoryId: catBurgers.id,
+    name: 'Mob Full',
+    description: 'Duplo blend, bacon, ovo, presunto, cheddar, mussarela, alface, tomate e molho. Tudo.',
+    price: 48,
+    imageUrl: '/burgers/mob-full.png',
+  });
 
-  const smashTemOpcoes = await prisma.productOption.count({ where: { productId: mobSmash.id } });
+  // ─── Chicken ─────────────────────────────────────────────────────────────────
 
-  if (smashTemOpcoes === 0) {
-    const adicionaisSmash = await prisma.productOption.create({
-      data: { productId: mobSmash.id, label: 'Adicionais', type: 'CHECKBOX', required: false },
-    });
-    await prisma.optionItem.createMany({
-      data: [
-        { optionId: adicionaisSmash.id, name: 'Bacon', additionalPrice: 4.0 },
-        { optionId: adicionaisSmash.id, name: 'Queijo extra', additionalPrice: 2.5 },
-        { optionId: adicionaisSmash.id, name: 'Jalapeño', additionalPrice: 1.5 },
-      ],
-    });
-  }
+  await upsertProduct({
+    categoryId: catChicken.id,
+    name: 'Mob Chicken',
+    description: 'Frango grelhado na chapa, mussarela, alface, tomate e molho especial da casa.',
+    price: 27,
+    imageUrl: '/burgers/mob-chicken.png',
+  });
 
-  // ─── Opções do Mob Bacon ──────────────────────────────────────────────────
+  await upsertProduct({
+    categoryId: catChicken.id,
+    name: 'Mob Chicken Bacon',
+    description: 'Frango grelhado com tiras de bacon, cheddar e alface. Combinação poderosa.',
+    price: 32,
+    imageUrl: '/burgers/mob-chicken-bacon.png',
+  });
 
-  const baconTemOpcoes = await prisma.productOption.count({ where: { productId: mobBacon.id } });
+  await upsertProduct({
+    categoryId: catChicken.id,
+    name: 'Mob Chicken Sunrise',
+    description: 'Frango grelhado com ovo frito, presunto, cheddar e molho especial. O sol nasceu no pão.',
+    price: 31,
+    imageUrl: '/burgers/mob-chicken-sunrise.png',
+  });
 
-  if (baconTemOpcoes === 0) {
-    const ponto = await prisma.productOption.create({
-      data: { productId: mobBacon.id, label: 'Ponto da carne', type: 'RADIO', required: true },
-    });
-    await prisma.optionItem.createMany({
-      data: [
-        { optionId: ponto.id, name: 'Mal passado', additionalPrice: 0 },
-        { optionId: ponto.id, name: 'Ao ponto', additionalPrice: 0 },
-        { optionId: ponto.id, name: 'Bem passado', additionalPrice: 0 },
-      ],
-    });
-  }
+  await upsertProduct({
+    categoryId: catChicken.id,
+    name: 'Mob Chicken Full',
+    description: 'Frango grelhado, bacon, ovo, presunto, cheddar, alface, tomate e molho especial. Tudo no frango.',
+    price: 40,
+    imageUrl: '/burgers/mob-chicken-full.png',
+  });
+
+  // ─── Combos ──────────────────────────────────────────────────────────────────
+
+  await upsertProduct({
+    categoryId: catCombos.id,
+    name: 'Mob Combo Clássico',
+    description: 'Mob Classic + Bebida lata. Economia de R$ 3.',
+    price: 38,
+  });
+
+  await upsertProduct({
+    categoryId: catCombos.id,
+    name: 'Mob Combo Premium',
+    description: 'Qualquer burger (B-01 a B-12) + Bebida lata + 1 Sobremesa. Economia de R$ 5.',
+    price: 55,
+  });
+
+  await upsertProduct({
+    categoryId: catCombos.id,
+    name: 'Mob Combo Sweet',
+    description: 'Mob Original + Bebida lata + 1 Cookie. Economia de R$ 4.',
+    price: 44,
+  });
+
+  await upsertProduct({
+    categoryId: catCombos.id,
+    name: 'Mob Para 2',
+    description: '2 Burgers à escolha + 2 Bebidas lata + 1 Sobremesa compartilhada. Economia de R$ 8.',
+    price: 78,
+  });
+
+  await upsertProduct({
+    categoryId: catCombos.id,
+    name: 'Mob Família',
+    description: '4 Burgers à escolha + 4 Bebidas lata + 2 Sobremesas. Economia de R$ 18.',
+    price: 148,
+  });
+
+  // ─── Bebidas ─────────────────────────────────────────────────────────────────
+
+  await upsertProduct({
+    categoryId: catBebidas.id,
+    name: 'Coca-Cola',
+    description: 'Lata 350ml gelada.',
+    price: 7,
+  });
+
+  await upsertProduct({
+    categoryId: catBebidas.id,
+    name: 'Coca-Cola Zero',
+    description: 'Lata 350ml gelada.',
+    price: 7,
+  });
+
+  await upsertProduct({
+    categoryId: catBebidas.id,
+    name: 'Guaraná',
+    description: 'Lata 350ml gelada.',
+    price: 6,
+  });
+
+  await upsertProduct({
+    categoryId: catBebidas.id,
+    name: 'Guaraná Zero',
+    description: 'Lata 350ml gelada.',
+    price: 6,
+  });
+
+  // ─── Sobremesas ──────────────────────────────────────────────────────────────
+
+  await upsertProduct({
+    categoryId: catSobremesas.id,
+    name: 'Mob Bombom de Morango',
+    description: 'Bombom artesanal de morango.',
+    price: 8,
+  });
+
+  await upsertProduct({
+    categoryId: catSobremesas.id,
+    name: 'Mob Brownie',
+    description: 'Ninho · Nutella · Bis · KitKat · Confete.',
+    price: 12,
+  });
+
+  await upsertProduct({
+    categoryId: catSobremesas.id,
+    name: 'Mob Cookie',
+    description: 'Cookie clássico artesanal.',
+    price: 7,
+  });
+
+  await upsertProduct({
+    categoryId: catSobremesas.id,
+    name: 'Mob Cookie Nutella',
+    description: 'Cookie recheado com Nutella.',
+    price: 10,
+  });
 
   // ─── Zonas de entrega ─────────────────────────────────────────────────────
 
@@ -267,7 +367,10 @@ async function main() {
   console.log('  Admin:      murilo@mobburger.com.br   / admin123');
   console.log('  Atendente:  atendente@mobburger.com.br / atendente123');
   console.log('');
-  console.log(`  Categorias: 4  |  Produtos: ${totalProdutos}  |  Zonas: ${totalZonas}`);
+  console.log(`  Categorias: 6  |  Produtos: ${totalProdutos}  |  Zonas: ${totalZonas}`);
+  console.log('');
+  console.log('  Cardápio:');
+  console.log('    14 Smash Burgers · 4 Chicken · 5 Combos · 4 Bebidas · 4 Sobremesas');
 }
 
 main()

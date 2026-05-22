@@ -18,7 +18,7 @@ export const customerLoginSchema = z.object({
 });
 
 export const googleAuthSchema = z.object({
-  idToken: z.string().min(1),
+  accessToken: z.string().min(1),
 });
 
 export const refreshTokenSchema = z.object({
@@ -29,4 +29,5 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type CustomerRegisterInput = z.infer<typeof customerRegisterSchema>;
 export type CustomerLoginInput = z.infer<typeof customerLoginSchema>;
 export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;
+// accessToken → verificado via Google userinfo endpoint
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;

@@ -14,7 +14,11 @@ import {
   customerLogin,
   googleAuth,
   refreshToken,
+  getMe,
+  updateMe,
+  changePassword,
 } from './auth.controller.js';
+import { authMiddleware, requireCustomer } from '../../middlewares/auth.middleware.js';
 
 const router = Router();
 
@@ -252,5 +256,9 @@ router.post('/google', validate(googleAuthSchema), asyncHandler(googleAuth));
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/refresh', validate(refreshTokenSchema), asyncHandler(refreshToken));
+
+router.get('/customer/me', authMiddleware, requireCustomer, asyncHandler(getMe));
+router.patch('/customer/me', authMiddleware, requireCustomer, asyncHandler(updateMe));
+router.patch('/customer/password', authMiddleware, requireCustomer, asyncHandler(changePassword));
 
 export default router;

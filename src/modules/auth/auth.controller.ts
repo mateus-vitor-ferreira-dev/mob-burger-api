@@ -5,6 +5,9 @@ import {
   customerLoginService,
   googleAuthService,
   refreshTokenService,
+  getMeService,
+  updateMeService,
+  changePasswordService,
 } from './auth.service.js';
 import { success } from '../../utils/apiResponse.js';
 import { HTTP } from '../../constants/httpStatus.js';
@@ -38,5 +41,21 @@ export async function googleAuth(req: Request, res: Response) {
 
 export async function refreshToken(req: Request, res: Response) {
   const result = await refreshTokenService(req.body as RefreshTokenInput);
+  return success(res, result);
+}
+
+export async function getMe(req: Request, res: Response) {
+  const result = await getMeService(req.user!.id);
+  return success(res, result);
+}
+
+export async function updateMe(req: Request, res: Response) {
+  const result = await updateMeService(req.user!.id, req.body as { name?: string; phone?: string });
+  return success(res, result);
+}
+
+export async function changePassword(req: Request, res: Response) {
+  const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
+  const result = await changePasswordService(req.user!.id, currentPassword, newPassword);
   return success(res, result);
 }
