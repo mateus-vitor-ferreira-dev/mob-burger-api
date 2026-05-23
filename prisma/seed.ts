@@ -233,6 +233,7 @@ async function main() {
     name: 'Mob Combo Clássico',
     description: 'Mob Classic + Bebida lata. Economia de R$ 3.',
     price: 38,
+    imageUrl: '/burgers/combo-mob-combo-classico.png',
   });
 
   await upsertProduct({
@@ -240,6 +241,7 @@ async function main() {
     name: 'Mob Combo Premium',
     description: 'Qualquer burger (B-01 a B-12) + Bebida lata + 1 Sobremesa. Economia de R$ 5.',
     price: 55,
+    imageUrl: '/burgers/combo-mob-combo-premium.png',
   });
 
   await upsertProduct({
@@ -247,6 +249,7 @@ async function main() {
     name: 'Mob Combo Sweet',
     description: 'Mob Original + Bebida lata + 1 Cookie. Economia de R$ 4.',
     price: 44,
+    imageUrl: '/burgers/combo-mob-combo-sweet.png',
   });
 
   await upsertProduct({
@@ -254,6 +257,7 @@ async function main() {
     name: 'Mob Para 2',
     description: '2 Burgers à escolha + 2 Bebidas lata + 1 Sobremesa compartilhada. Economia de R$ 8.',
     price: 78,
+    imageUrl: '/burgers/combo-mob-para-2.png',
   });
 
   await upsertProduct({
@@ -261,6 +265,7 @@ async function main() {
     name: 'Mob Família',
     description: '4 Burgers à escolha + 4 Bebidas lata + 2 Sobremesas. Economia de R$ 18.',
     price: 148,
+    imageUrl: '/burgers/combo-mob-familia.png',
   });
 
   // ─── Bebidas ─────────────────────────────────────────────────────────────────
@@ -270,6 +275,7 @@ async function main() {
     name: 'Coca-Cola',
     description: 'Lata 350ml gelada.',
     price: 7,
+    imageUrl: '/burgers/coca-cola.png',
   });
 
   await upsertProduct({
@@ -277,6 +283,7 @@ async function main() {
     name: 'Coca-Cola Zero',
     description: 'Lata 350ml gelada.',
     price: 7,
+    imageUrl: '/burgers/coca-cola-zero.png',
   });
 
   await upsertProduct({
@@ -284,6 +291,7 @@ async function main() {
     name: 'Guaraná',
     description: 'Lata 350ml gelada.',
     price: 6,
+    imageUrl: '/burgers/guarana.png',
   });
 
   await upsertProduct({
@@ -291,6 +299,7 @@ async function main() {
     name: 'Guaraná Zero',
     description: 'Lata 350ml gelada.',
     price: 6,
+    imageUrl: '/burgers/guarana-zero.png',
   });
 
   // ─── Sobremesas ──────────────────────────────────────────────────────────────
@@ -300,6 +309,7 @@ async function main() {
     name: 'Mob Bombom de Morango',
     description: 'Bombom artesanal de morango.',
     price: 8,
+    imageUrl: '/burgers/sobremesa-mob-bombom-de-morango.png',
   });
 
   await upsertProduct({
@@ -307,6 +317,7 @@ async function main() {
     name: 'Mob Brownie',
     description: 'Ninho · Nutella · Bis · KitKat · Confete.',
     price: 12,
+    imageUrl: '/burgers/sobremesa-mob-brownie.png',
   });
 
   await upsertProduct({
@@ -314,6 +325,7 @@ async function main() {
     name: 'Mob Cookie',
     description: 'Cookie clássico artesanal.',
     price: 7,
+    imageUrl: '/burgers/sobremesa-mob-cookie.png',
   });
 
   await upsertProduct({
@@ -321,6 +333,7 @@ async function main() {
     name: 'Mob Cookie Nutella',
     description: 'Cookie recheado com Nutella.',
     price: 10,
+    imageUrl: '/burgers/sobremesa-mob-cookie-nutella.png',
   });
 
   // ─── Zonas de entrega ─────────────────────────────────────────────────────
