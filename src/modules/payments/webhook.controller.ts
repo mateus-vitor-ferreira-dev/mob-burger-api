@@ -5,6 +5,7 @@ import AppError from '../../utils/AppError.js';
 import { MSG } from '../../constants/messages/index.js';
 import { HTTP } from '../../constants/httpStatus.js';
 import { broadcastOrderUpdate } from '../orders/orders.sse.js';
+import { sendWhatsApp, buildOrderConfirmedMessage } from '../notifications/whatsapp.service.js';
 
 export async function handleStripeWebhook(req: Request, res: Response) {
   const sig = req.headers['stripe-signature'];
@@ -40,6 +41,18 @@ export async function handleStripeWebhook(req: Request, res: Response) {
       });
 
       broadcastOrderUpdate({ type: 'new_order', order: updated });
+
+      // Notificação WhatsApp ao cliente
+      if (updated.customer.phone) {
+        const msg = buildOrderConfirmedMessage({
+          customerName: updated.customer.name,
+          orderNumber: updated.orderNumber,
+          orderId: updated.id,
+          items: updated.items.map((i) => ({ quantity: i.quantity, productName: i.product.name })),
+          totalPrice: updated.totalPrice,
+        });
+        sendWhatsApp(updated.customer.phone, msg).catch(() => {});
+      }
     }
   }
 

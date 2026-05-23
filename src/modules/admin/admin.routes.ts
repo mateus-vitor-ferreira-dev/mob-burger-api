@@ -10,6 +10,7 @@ import {
   storeConfigSchema,
 } from './admin.schema.js';
 import {
+  getStats,
   listCategories,
   createCategory,
   updateCategory,
@@ -19,6 +20,7 @@ import {
   updateProduct,
   deleteProduct,
   toggleProduct,
+  listProductOptions,
   createProductOption,
   updateProductOption,
   deleteProductOption,
@@ -27,8 +29,12 @@ import {
   deleteOptionItem,
   listDeliveryZones,
   upsertDeliveryZone,
+  deleteDeliveryZone,
   getStoreConfig,
   updateStoreConfig,
+  listStaff,
+  createStaff,
+  deleteStaff,
 } from './admin.controller.js';
 
 const router = Router();
@@ -47,6 +53,10 @@ const router = Router();
  *   - name: Admin — Configuração
  *     description: Configurações gerais da loja (requer admin)
  */
+
+// ─── Stats ───────────────────────────────────────────────────────────────────
+
+router.get('/stats', asyncHandler(getStats));
 
 // ─── Categorias ───────────────────────────────────────────────────────────────
 
@@ -259,6 +269,7 @@ router.patch('/products/:id/toggle', asyncHandler(toggleProduct));
  *       201:
  *         description: Grupo de opções criado
  */
+router.get('/products/:productId/options', asyncHandler(listProductOptions));
 router.post(
   '/products/:productId/options',
   validate(productOptionSchema),
@@ -451,6 +462,7 @@ router.delete(
  */
 router.get('/delivery-zones', asyncHandler(listDeliveryZones));
 router.post('/delivery-zones', validate(deliveryZoneSchema), asyncHandler(upsertDeliveryZone));
+router.delete('/delivery-zones/:id', asyncHandler(deleteDeliveryZone));
 
 // ─── Config da loja ───────────────────────────────────────────────────────────
 
@@ -489,5 +501,10 @@ router.post('/delivery-zones', validate(deliveryZoneSchema), asyncHandler(upsert
  */
 router.get('/config', asyncHandler(getStoreConfig));
 router.put('/config', validate(storeConfigSchema), asyncHandler(updateStoreConfig));
+
+// ─── Staff ────────────────────────────────────────────────────────────────────
+router.get('/staff', asyncHandler(listStaff));
+router.post('/staff', asyncHandler(createStaff));
+router.delete('/staff/:id', asyncHandler(deleteStaff));
 
 export default router;

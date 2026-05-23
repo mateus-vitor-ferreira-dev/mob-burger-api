@@ -166,19 +166,26 @@ export async function googleAuthService(data: GoogleAuthInput) {
 export async function getMeService(customerId: string) {
   const customer = await prisma.customer.findUnique({
     where: { id: customerId },
-    select: { id: true, name: true, email: true, phone: true, googleId: true },
+    select: { id: true, name: true, email: true, phone: true, googleId: true, defaultAddress: true },
   });
   if (!customer) {
     throw new AppError('Cliente não encontrado', HTTP.NOT_FOUND, 'CUSTOMER_NOT_FOUND');
   }
-  return { customer: { ...customer, hasPassword: !!customer.googleId === false } };
+  return { customer: { ...customer, hasPassword: !customer.googleId } };
 }
 
-export async function updateMeService(customerId: string, data: { name?: string; phone?: string }) {
+export async function updateMeService(
+  customerId: string,
+  data: { name?: string; phone?: string; defaultAddress?: Record<string, string> | null },
+) {
   const customer = await prisma.customer.update({
     where: { id: customerId },
-    data: { ...(data.name && { name: data.name }), ...(data.phone !== undefined && { phone: data.phone }) },
-    select: { id: true, name: true, email: true, phone: true },
+    data: {
+      ...(data.name && { name: data.name }),
+      ...(data.phone !== undefined && { phone: data.phone }),
+      ...(data.defaultAddress !== undefined && { defaultAddress: data.defaultAddress ?? undefined }),
+    },
+    select: { id: true, name: true, email: true, phone: true, defaultAddress: true },
   });
   return { customer };
 }
@@ -237,4 +244,31 @@ export async function refreshTokenService(data: RefreshTokenInput) {
     type: 'customer',
   };
   return generateTokens(payload);
+}
+
+export async function forgotPasswordService(email: string): Promise<string | null> {
+  const customer = await prisma.customer.findUnique({ where: { email } });
+  if (!customer || !customer.passwordHash) return null; // não revela se existe
+
+  const token = jwt.sign(
+    { sub: customer.id, type: 'password_reset' },
+    AUTH_CONFIG.accessTokenSecret,
+    { expiresIn: '1h' },
+  );
+
+  return token;
+}
+
+export async function resetPasswordService(token: string, newPassword: string): Promise<void> {
+  let payload: { sub: string; type: string };
+  try {
+    payload = jwt.verify(token, AUTH_CONFIG.accessTokenSecret) as { sub: string; type: string };
+  } catch {
+    throw new AppError('Token inválido ou expirado.', HTTP.BAD_REQUEST, 'INVALID_TOKEN');
+  }
+  if (payload.type !== 'password_reset') {
+    throw new AppError('Token inválido.', HTTP.BAD_REQUEST, 'INVALID_TOKEN');
+  }
+  const hash = await bcrypt.hash(newPassword, 12);
+  await prisma.customer.update({ where: { id: payload.sub }, data: { passwordHash: hash } });
 }

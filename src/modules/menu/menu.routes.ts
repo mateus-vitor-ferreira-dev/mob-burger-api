@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { getMenu, getProduct } from './menu.controller.js';
+import { getMenu, getProduct, getDeliveryZones, getStoreStatus } from './menu.controller.js';
 
 const router = Router();
 
@@ -67,5 +67,7 @@ router.get('/', asyncHandler(getMenu));
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/product/:id', asyncHandler(getProduct));
+router.get('/delivery-zones', asyncHandler(getDeliveryZones));
+router.get('/status', asyncHandler(getStoreStatus));
 
 export default router;

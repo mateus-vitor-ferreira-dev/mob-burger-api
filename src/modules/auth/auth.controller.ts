@@ -3,6 +3,8 @@ import {
   loginService,
   customerRegisterService,
   customerLoginService,
+  forgotPasswordService,
+  resetPasswordService,
   googleAuthService,
   refreshTokenService,
   getMeService,
@@ -58,4 +60,19 @@ export async function changePassword(req: Request, res: Response) {
   const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
   const result = await changePasswordService(req.user!.id, currentPassword, newPassword);
   return success(res, result);
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body as { email: string };
+  const token = await forgotPasswordService(email);
+  const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+  const resetUrl = token ? `${frontendUrl}/redefinir-senha?token=${token}` : null;
+  // Sempre retorna 200 para não revelar se e-mail existe
+  return success(res, { resetUrl });
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const { token, newPassword } = req.body as { token: string; newPassword: string };
+  await resetPasswordService(token, newPassword);
+  return success(res, { message: 'Senha redefinida com sucesso.' });
 }

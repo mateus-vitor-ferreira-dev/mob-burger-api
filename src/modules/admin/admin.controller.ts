@@ -69,6 +69,10 @@ export async function toggleProduct(req: Request, res: Response) {
 
 // ─── Opções de personalização ─────────────────────────────────────────────────
 
+export async function listProductOptions(req: Request, res: Response) {
+  return success(res, await adminService.listProductOptionsService(req.params.productId as string));
+}
+
 export async function createProductOption(req: Request, res: Response) {
   return success(
     res,
@@ -131,6 +135,19 @@ export async function upsertDeliveryZone(req: Request, res: Response) {
   );
 }
 
+export async function deleteDeliveryZone(req: Request, res: Response) {
+  await adminService.deleteDeliveryZoneService(req.params.id as string);
+  return success(res, null, HTTP.NO_CONTENT);
+}
+
+// ─── Stats ───────────────────────────────────────────────────────────────────
+
+export async function getStats(req: Request, res: Response) {
+  const from = req.query.from ? new Date(req.query.from as string) : undefined;
+  const to   = req.query.to   ? new Date(req.query.to   as string) : undefined;
+  return success(res, await adminService.getStatsService(from, to));
+}
+
 // ─── Config da loja ───────────────────────────────────────────────────────────
 
 export async function getStoreConfig(_req: Request, res: Response) {
@@ -139,4 +156,20 @@ export async function getStoreConfig(_req: Request, res: Response) {
 
 export async function updateStoreConfig(req: Request, res: Response) {
   return success(res, await adminService.updateStoreConfigService(req.body as StoreConfigInput));
+}
+
+// ─── Staff ────────────────────────────────────────────────────────────────────
+
+export async function listStaff(_req: Request, res: Response) {
+  return success(res, await adminService.listStaffService());
+}
+
+export async function createStaff(req: Request, res: Response) {
+  const { email, password, role } = req.body as { email: string; password: string; role: 'ADMIN' | 'ATTENDANT' };
+  return success(res, await adminService.createStaffService(email, password, role ?? 'ATTENDANT'), HTTP.CREATED);
+}
+
+export async function deleteStaff(req: Request, res: Response) {
+  await adminService.deleteStaffService(req.params.id as string, req.user!.id);
+  return success(res, null, HTTP.NO_CONTENT);
 }
