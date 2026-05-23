@@ -93,6 +93,8 @@ model Order {
   paymentMethod   PaymentMethod
   paymentStatus   PaymentStatus @default(PENDING)
   stripePaymentId String?
+  driverId        String?
+  driver          Driver?       @relation(fields: [driverId], references: [id])
   items           OrderItem[]
   delivery        DeliveryInfo?
   createdAt       DateTime      @default(now())
@@ -179,4 +181,14 @@ model StoreConfig {
   isOpen         Boolean @default(true)
   openingHours   Json
   whatsappNumber String?
+}
+
+model Driver {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  active    Boolean  @default(true)
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

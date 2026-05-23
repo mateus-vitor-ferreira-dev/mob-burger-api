@@ -14,6 +14,7 @@ import {
   listOrders,
   updateOrderStatus,
   printOrder,
+  assignDriver,
 } from './orders.controller.js';
 import { orderSseHandler } from './orders.sse.js';
 
@@ -212,5 +213,7 @@ router.patch(
  *         description: Impressora não configurada ou offline
  */
 router.post('/:id/print', authMiddleware, requireStaff, asyncHandler(printOrder));
+
+router.post('/:id/assign', authMiddleware, requireStaff, asyncHandler(assignDriver));
 
 export default router;

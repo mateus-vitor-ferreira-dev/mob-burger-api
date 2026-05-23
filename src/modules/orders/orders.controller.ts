@@ -5,6 +5,7 @@ import {
   myOrdersService,
   listOrdersService,
   updateOrderStatusService,
+  assignDriverService,
 } from './orders.service.js';
 import { printOrderService } from '../print/print.service.js';
 import { success } from '../../utils/apiResponse.js';
@@ -43,4 +44,9 @@ export async function updateOrderStatus(req: Request, res: Response) {
 export async function printOrder(req: Request, res: Response) {
   await printOrderService(req.params.id);
   return success(res, { message: 'Imprimindo...' });
+}
+
+export async function assignDriver(req: Request, res: Response) {
+  const { driverId } = req.body as { driverId: string };
+  return success(res, await assignDriverService(req.params.id as string, driverId));
 }

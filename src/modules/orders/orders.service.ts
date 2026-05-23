@@ -5,7 +5,7 @@ import { HTTP } from '../../constants/httpStatus.js';
 import { MSG } from '../../constants/messages/index.js';
 import { generateDailyOrderNumber } from '../../utils/orderNumber.js';
 import { broadcastOrderUpdate } from './orders.sse.js';
-import { sendWhatsApp, buildOrderReadyMessage } from '../notifications/whatsapp.service.js';
+import { sendWhatsApp, buildOrderReadyMessage, buildDriverAssignmentMessage } from '../notifications/whatsapp.service.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
 
 // Transições de status permitidas pelo operador
@@ -203,6 +203,54 @@ export async function updateOrderStatusService(id: string, data: UpdateStatusInp
       type: updated.type as 'DELIVERY' | 'PICKUP',
     });
     sendWhatsApp(updated.customer.phone, msg).catch(() => {});
+  }
+
+  return updated;
+}
+
+export async function assignDriverService(orderId: string, driverId: string) {
+  const [order, driver] = await Promise.all([
+    prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        customer: true,
+        delivery: true,
+        items: { include: { product: true } },
+      },
+    }),
+    prisma.driver.findUnique({ where: { id: driverId } }),
+  ]);
+
+  if (!order) throw new AppError('Pedido não encontrado.', HTTP.NOT_FOUND, 'ORDER_NOT_FOUND');
+  if (!driver) throw new AppError('Entregador não encontrado.', HTTP.NOT_FOUND, 'DRIVER_NOT_FOUND');
+  if (order.type !== 'DELIVERY') throw new AppError('Apenas pedidos de entrega podem ser atribuídos.', HTTP.BAD_REQUEST, 'NOT_DELIVERY');
+  if (!driver.active) throw new AppError('Entregador inativo.', HTTP.BAD_REQUEST, 'DRIVER_INACTIVE');
+
+  const newStatus = order.status === 'READY' ? 'OUT_FOR_DELIVERY' : order.status;
+
+  const updated = await prisma.order.update({
+    where: { id: orderId },
+    data: { driverId, status: newStatus },
+    include: { driver: true, delivery: true, customer: true },
+  });
+
+  broadcastOrderUpdate({ type: 'status_update', order: updated });
+
+  if (order.delivery) {
+    const msg = buildDriverAssignmentMessage({
+      driverName: driver.name,
+      orderNumber: order.orderNumber,
+      customerName: order.customer.name,
+      address: {
+        street: order.delivery.street,
+        number: order.delivery.number,
+        neighborhood: order.delivery.neighborhood,
+        complement: order.delivery.complement,
+      },
+      items: order.items.map((i) => ({ quantity: i.quantity, productName: i.product.name })),
+      totalPrice: order.totalPrice,
+    });
+    sendWhatsApp(driver.phone, msg).catch(() => {});
   }
 
   return updated;

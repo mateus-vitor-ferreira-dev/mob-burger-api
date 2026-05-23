@@ -52,6 +52,41 @@ export function buildOrderConfirmedMessage(params: {
   );
 }
 
+export function buildDriverAssignmentMessage(params: {
+  driverName: string;
+  orderNumber: number;
+  customerName: string;
+  address: { street: string; number: string; neighborhood: string; complement?: string | null; city?: string };
+  items: { quantity: number; productName: string }[];
+  totalPrice: number;
+}): string {
+  const { driverName, orderNumber, customerName, address, items, totalPrice } = params;
+  const num = String(orderNumber).padStart(4, '0');
+  const price = `R$ ${totalPrice.toFixed(2).replace('.', ',')}`;
+  const itemLines = items.map((i) => `• ${i.quantity}× ${i.productName.replace(/^Mob /i, '')}`).join('\n');
+
+  const addrStr = [
+    `${address.street}, ${address.number}`,
+    address.complement ?? '',
+    address.neighborhood,
+    address.city ?? '',
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  const mapsUrl =
+    'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(addrStr);
+
+  return (
+    `🛵 *Pedido #${num} atribuído a você, ${driverName.split(' ')[0]}!*\n\n` +
+    `👤 *Cliente:* ${customerName}\n` +
+    `📍 *Endereço:*\n${addrStr}\n\n` +
+    `📦 *Itens:*\n${itemLines}\n\n` +
+    `💰 *Total:* ${price}\n\n` +
+    `🗺️ Ver rota:\n${mapsUrl}`
+  );
+}
+
 export function buildOrderReadyMessage(params: {
   customerName: string;
   orderNumber: number;
