@@ -16,6 +16,7 @@ import paymentsRoutes from './modules/payments/payments.routes.js';
 import webhookRoutes from './modules/payments/webhook.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
 import driversRoutes from './modules/drivers/drivers.routes.js';
+import couponsRoutes from './modules/coupons/coupons.routes.js';
 
 validateEnv();
 
@@ -50,6 +51,7 @@ app.use('/api/auth', authRoutes);
 // Rotas protegidas — admin
 app.use('/api/admin', authMiddleware, requireAdmin, adminRoutes);
 app.use('/api/drivers', authMiddleware, requireAdmin, driversRoutes);
+app.use('/api/coupons', couponsRoutes);
 
 // 404
 app.use((_req, res) => {

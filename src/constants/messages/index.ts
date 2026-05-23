@@ -35,6 +35,16 @@ export const MSG = {
     paymentFailed: 'Falha no processamento do pagamento.',
     alreadyPaid: 'Este pedido já foi pago.',
   },
+  coupon: {
+    invalid: 'Cupom inválido ou inexistente.',
+    inactive: 'Este cupom não está mais ativo.',
+    notStarted: 'Este cupom ainda não está válido.',
+    expired: 'Este cupom expirou.',
+    exhausted: 'Este cupom esgotou o limite de usos.',
+    dailyLimit: 'Limite diário deste cupom atingido.',
+    userLimit: 'Você já utilizou este cupom o número máximo de vezes.',
+    minValue: 'Valor mínimo do pedido não atingido para usar este cupom.',
+  },
   common: {
     internalError: 'Erro interno do servidor.',
     validationError: 'Dados inválidos. Verifique os campos e tente novamente.',

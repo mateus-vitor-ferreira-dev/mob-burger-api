@@ -6,7 +6,27 @@ import { MSG } from '../../constants/messages/index.js';
 import { generateDailyOrderNumber } from '../../utils/orderNumber.js';
 import { broadcastOrderUpdate } from './orders.sse.js';
 import { sendWhatsApp, buildOrderReadyMessage, buildDriverAssignmentMessage } from '../notifications/whatsapp.service.js';
+import { validateCouponService } from '../coupons/coupons.service.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
+
+const DAY_KEYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'] as const;
+type DayKey = (typeof DAY_KEYS)[number];
+
+function isWithinOpeningHours(
+  openingHours: Record<DayKey, { open: string; close: string; closed: boolean }>,
+): boolean {
+  const nowBR = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+  const dayKey = DAY_KEYS[nowBR.getDay()];
+  const hours = openingHours[dayKey];
+  if (!hours || hours.closed) return false;
+  const [openH, openM] = hours.open.split(':').map(Number);
+  const [closeH, closeM] = hours.close.split(':').map(Number);
+  const current = nowBR.getHours() * 60 + nowBR.getMinutes();
+  const open = openH * 60 + openM;
+  let close = closeH * 60 + closeM;
+  if (close === 0) close = 24 * 60; // "00:00" = meia-noite, fim do expediente
+  return current >= open && current < close;
+}
 
 // Transições de status permitidas pelo operador
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -29,8 +49,13 @@ export async function createOrderService(customerId: string, data: CreateOrderIn
   }
 
   const config = await prisma.storeConfig.findFirst();
-  if (config && !config.isOpen) {
-    throw new AppError(MSG.order.storeClosed, HTTP.UNPROCESSABLE, 'STORE_CLOSED');
+  if (config) {
+    if (!config.isOpen) {
+      throw new AppError(MSG.order.storeClosed, HTTP.UNPROCESSABLE, 'STORE_CLOSED');
+    }
+    if (config.openingHours && !isWithinOpeningHours(config.openingHours as Record<DayKey, { open: string; close: string; closed: boolean }>)) {
+      throw new AppError(MSG.order.storeClosed, HTTP.UNPROCESSABLE, 'STORE_CLOSED');
+    }
   }
 
   const productIds = data.items.map((i) => i.productId);
@@ -63,7 +88,17 @@ export async function createOrderService(customerId: string, data: CreateOrderIn
     deliveryFee = zone?.fee ?? 0;
   }
 
-  const totalPrice = Number((itemsTotal + deliveryFee).toFixed(2));
+  // Apply coupon
+  let discountAmount = 0;
+  let couponId: string | undefined;
+  if (data.couponCode) {
+    const couponResult = await validateCouponService(data.couponCode, itemsTotal, deliveryFee, customerId);
+    discountAmount = couponResult.discountAmount;
+    couponId = couponResult.couponId;
+    if (couponResult.type === 'FREE_DELIVERY') deliveryFee = 0;
+  }
+
+  const totalPrice = Number(Math.max(0, itemsTotal + deliveryFee - discountAmount).toFixed(2));
   const orderNumber = await generateDailyOrderNumber();
 
   const order = await prisma.order.create({
@@ -72,6 +107,8 @@ export async function createOrderService(customerId: string, data: CreateOrderIn
       customerId,
       type: data.type,
       totalPrice,
+      discountAmount,
+      couponId,
       paymentMethod: data.paymentMethod,
       items: {
         create: data.items.map((item) => {

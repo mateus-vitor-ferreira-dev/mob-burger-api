@@ -90,11 +90,14 @@ model Order {
   type            OrderType
   status          OrderStatus   @default(AWAITING_PAYMENT)
   totalPrice      Float
+  discountAmount  Float         @default(0)
   paymentMethod   PaymentMethod
   paymentStatus   PaymentStatus @default(PENDING)
   stripePaymentId String?
   driverId        String?
   driver          Driver?       @relation(fields: [driverId], references: [id])
+  couponId        String?
+  coupon          Coupon?       @relation(fields: [couponId], references: [id])
   items           OrderItem[]
   delivery        DeliveryInfo?
   createdAt       DateTime      @default(now())
@@ -191,4 +194,27 @@ model Driver {
   orders    Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_DELIVERY
+}
+
+model Coupon {
+  id             String     @id @default(cuid())
+  code           String     @unique
+  type           CouponType
+  value          Float      @default(0)
+  minOrderValue  Float      @default(0)
+  maxUsesTotal   Int?
+  maxUsesPerDay  Int?
+  maxUsesPerUser Int?
+  active         Boolean    @default(true)
+  startsAt       DateTime?
+  expiresAt      DateTime?
+  orders         Order[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }

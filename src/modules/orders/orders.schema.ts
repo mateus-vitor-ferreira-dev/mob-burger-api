@@ -25,6 +25,7 @@ export const createOrderSchema = z
     paymentMethod: z.enum(['PIX', 'CARD', 'CASH_ON_DELIVERY', 'CARD_ON_DELIVERY']),
     items: z.array(orderItemSchema).min(1),
     delivery: deliveryInfoSchema.optional(),
+    couponCode: z.string().max(50).optional(),
   })
   .refine((data) => data.type === 'PICKUP' || (data.type === 'DELIVERY' && data.delivery), {
     message: 'Endereço de entrega é obrigatório para delivery.',
