@@ -202,6 +202,19 @@ enum CouponType {
   FREE_DELIVERY
 }
 
+model Expense {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   @default("FIXED")
+  amount    Float
+  month     String
+  items     Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([month])
+}
+
 model Coupon {
   id             String     @id @default(cuid())
   code           String     @unique

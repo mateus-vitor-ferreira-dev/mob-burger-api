@@ -17,6 +17,7 @@ import webhookRoutes from './modules/payments/webhook.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
 import driversRoutes from './modules/drivers/drivers.routes.js';
 import couponsRoutes from './modules/coupons/coupons.routes.js';
+import expensesRoutes from './modules/expenses/expenses.routes.js';
 
 validateEnv();
 
@@ -52,6 +53,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', authMiddleware, requireAdmin, adminRoutes);
 app.use('/api/drivers', authMiddleware, requireAdmin, driversRoutes);
 app.use('/api/coupons', couponsRoutes);
+app.use('/api/expenses', authMiddleware, requireAdmin, expensesRoutes);
 
 // 404
 app.use((_req, res) => {
