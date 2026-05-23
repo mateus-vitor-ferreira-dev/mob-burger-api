@@ -13,7 +13,9 @@ import {
   myOrders,
   listOrders,
   updateOrderStatus,
+  printOrder,
 } from './orders.controller.js';
+import { orderSseHandler } from './orders.sse.js';
 
 const router = Router();
 
@@ -103,6 +105,9 @@ router.post(
  */
 router.get('/my', authMiddleware, requireCustomer, asyncHandler(myOrders));
 
+// SSE público — cliente acompanha o próprio pedido em tempo real
+router.get('/:id/stream', orderSseHandler);
+
 /**
  * @openapi
  * /api/orders/{id}:
@@ -186,5 +191,26 @@ router.patch(
   validate(updateStatusSchema),
   asyncHandler(updateOrderStatus),
 );
+
+/**
+ * @openapi
+ * /api/orders/{id}/print:
+ *   post:
+ *     tags: [Pedidos — Operador]
+ *     summary: Imprimir pedido na impressora térmica
+ *     description: Envia o pedido para a impressora configurada via PRINTER_INTERFACE. Retorna 503 se a impressora não estiver configurada ou offline.
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Enviado para impressora com sucesso
+ *       503:
+ *         description: Impressora não configurada ou offline
+ */
+router.post('/:id/print', authMiddleware, requireStaff, asyncHandler(printOrder));
 
 export default router;

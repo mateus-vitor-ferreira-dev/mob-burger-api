@@ -1,6 +1,23 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { validate } from '../../middlewares/validate.js';
+
+const authSensitiveLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: { message: 'Muitas tentativas. Aguarde 15 minutos.', code: 'TOO_MANY_REQUESTS' } },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: { message: 'Muitas tentativas de login. Aguarde 15 minutos.', code: 'TOO_MANY_REQUESTS' } },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 import {
   loginSchema,
   customerRegisterSchema,
@@ -17,6 +34,8 @@ import {
   getMe,
   updateMe,
   changePassword,
+  forgotPassword,
+  resetPassword,
 } from './auth.controller.js';
 import { authMiddleware, requireCustomer } from '../../middlewares/auth.middleware.js';
 
@@ -76,7 +95,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/login', validate(loginSchema), asyncHandler(login));
+router.post('/login', loginLimiter, validate(loginSchema), asyncHandler(login));
 
 /**
  * @openapi
@@ -130,7 +149,7 @@ router.post('/login', validate(loginSchema), asyncHandler(login));
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/customer/register', validate(customerRegisterSchema), asyncHandler(customerRegister));
+router.post('/customer/register', authSensitiveLimiter, validate(customerRegisterSchema), asyncHandler(customerRegister));
 
 /**
  * @openapi
@@ -177,7 +196,7 @@ router.post('/customer/register', validate(customerRegisterSchema), asyncHandler
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/customer/login', validate(customerLoginSchema), asyncHandler(customerLogin));
+router.post('/customer/login', loginLimiter, validate(customerLoginSchema), asyncHandler(customerLogin));
 
 /**
  * @openapi
@@ -221,7 +240,7 @@ router.post('/customer/login', validate(customerLoginSchema), asyncHandler(custo
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/google', validate(googleAuthSchema), asyncHandler(googleAuth));
+router.post('/google', loginLimiter, validate(googleAuthSchema), asyncHandler(googleAuth));
 
 /**
  * @openapi
@@ -260,5 +279,8 @@ router.post('/refresh', validate(refreshTokenSchema), asyncHandler(refreshToken)
 router.get('/customer/me', authMiddleware, requireCustomer, asyncHandler(getMe));
 router.patch('/customer/me', authMiddleware, requireCustomer, asyncHandler(updateMe));
 router.patch('/customer/password', authMiddleware, requireCustomer, asyncHandler(changePassword));
+
+router.post('/forgot-password', authSensitiveLimiter, asyncHandler(forgotPassword));
+router.post('/reset-password', authSensitiveLimiter, asyncHandler(resetPassword));
 
 export default router;

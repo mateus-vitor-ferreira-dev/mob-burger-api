@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import AppError from '../utils/AppError.js';
+import { logger } from '../utils/logger.js';
 
 export const errorMiddleware = (
   err: unknown,
@@ -18,7 +19,7 @@ export const errorMiddleware = (
       ? (stdErr?.message ?? 'Internal server error')
       : 'Internal server error';
 
-  console.error({
+  logger.error({
     event: 'request_error',
     message: stdErr?.message,
     code,

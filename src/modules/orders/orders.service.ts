@@ -1,9 +1,11 @@
+import stripe from '../../config/stripe.js';
 import prisma from '../../config/prisma.js';
 import AppError from '../../utils/AppError.js';
 import { HTTP } from '../../constants/httpStatus.js';
 import { MSG } from '../../constants/messages/index.js';
 import { generateDailyOrderNumber } from '../../utils/orderNumber.js';
 import { broadcastOrderUpdate } from './orders.sse.js';
+import { sendWhatsApp, buildOrderReadyMessage } from '../notifications/whatsapp.service.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
 
 // Transições de status permitidas pelo operador
@@ -126,27 +128,42 @@ export async function getOrderService(id: string) {
   return order;
 }
 
-export async function myOrdersService(customerId: string) {
-  return prisma.order.findMany({
-    where: { customerId },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      items: { include: { product: { select: { id: true, name: true, imageUrl: true } } } },
-      delivery: true,
-    },
-  });
+export async function myOrdersService(customerId: string, page = 1, limit = 20) {
+  const skip = (page - 1) * limit;
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where: { customerId },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+      include: {
+        items: { include: { product: { select: { id: true, name: true, imageUrl: true } } } },
+        delivery: true,
+      },
+    }),
+    prisma.order.count({ where: { customerId } }),
+  ]);
+  return { orders, total, page, pages: Math.ceil(total / limit) };
 }
 
-export async function listOrdersService(status?: string) {
-  return prisma.order.findMany({
-    where: status ? { status: status as never } : {},
-    orderBy: { createdAt: 'desc' },
-    include: {
-      items: { include: { product: true } },
-      delivery: true,
-      customer: { select: { id: true, name: true, phone: true } },
-    },
-  });
+export async function listOrdersService(status?: string, page = 1, limit = 50) {
+  const where = status ? { status: status as never } : {};
+  const skip = (page - 1) * limit;
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+      include: {
+        items: { include: { product: true } },
+        delivery: true,
+        customer: { select: { id: true, name: true, phone: true } },
+      },
+    }),
+    prisma.order.count({ where }),
+  ]);
+  return { orders, total, page, pages: Math.ceil(total / limit) };
 }
 
 export async function updateOrderStatusService(id: string, data: UpdateStatusInput) {
@@ -158,9 +175,17 @@ export async function updateOrderStatusService(id: string, data: UpdateStatusInp
     throw new AppError(MSG.order.invalidStatus, HTTP.UNPROCESSABLE, 'INVALID_STATUS_TRANSITION');
   }
 
+  const updateData: Record<string, unknown> = { status: data.status };
+
+  // Reembolso automático ao cancelar pedido já pago
+  if (data.status === 'CANCELLED' && order.paymentStatus === 'PAID' && order.stripePaymentId) {
+    await stripe.refunds.create({ payment_intent: order.stripePaymentId });
+    updateData.paymentStatus = 'REFUNDED';
+  }
+
   const updated = await prisma.order.update({
     where: { id },
-    data: { status: data.status },
+    data: updateData,
     include: {
       items: { include: { product: true } },
       delivery: true,
@@ -169,6 +194,16 @@ export async function updateOrderStatusService(id: string, data: UpdateStatusInp
   });
 
   broadcastOrderUpdate({ type: 'status_update', order: updated });
+
+  // Notifica cliente quando pedido fica pronto ou saiu para entrega
+  if ((data.status === 'READY' || data.status === 'OUT_FOR_DELIVERY') && updated.customer.phone) {
+    const msg = buildOrderReadyMessage({
+      customerName: updated.customer.name,
+      orderNumber: updated.orderNumber,
+      type: updated.type as 'DELIVERY' | 'PICKUP',
+    });
+    sendWhatsApp(updated.customer.phone, msg).catch(() => {});
+  }
 
   return updated;
 }

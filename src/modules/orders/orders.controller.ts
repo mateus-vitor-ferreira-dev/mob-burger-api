@@ -6,6 +6,7 @@ import {
   listOrdersService,
   updateOrderStatusService,
 } from './orders.service.js';
+import { printOrderService } from '../print/print.service.js';
 import { success } from '../../utils/apiResponse.js';
 import { HTTP } from '../../constants/httpStatus.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
@@ -21,16 +22,25 @@ export async function getOrder(req: Request, res: Response) {
 }
 
 export async function myOrders(req: Request, res: Response) {
-  const orders = await myOrdersService(req.user!.id);
-  return success(res, orders);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 20;
+  const result = await myOrdersService(req.user!.id, page, limit);
+  return success(res, result);
 }
 
 export async function listOrders(req: Request, res: Response) {
-  const orders = await listOrdersService(req.query.status as string | undefined);
-  return success(res, orders);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 50;
+  const result = await listOrdersService(req.query.status as string | undefined, page, limit);
+  return success(res, result);
 }
 
 export async function updateOrderStatus(req: Request, res: Response) {
   const order = await updateOrderStatusService(req.params.id, req.body as UpdateStatusInput);
   return success(res, order);
+}
+
+export async function printOrder(req: Request, res: Response) {
+  await printOrderService(req.params.id);
+  return success(res, { message: 'Imprimindo...' });
 }

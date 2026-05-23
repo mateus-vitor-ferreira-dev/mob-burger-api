@@ -3,6 +3,8 @@ import prisma from '../../config/prisma.js';
 import AppError from '../../utils/AppError.js';
 import { HTTP } from '../../constants/httpStatus.js';
 import { MSG } from '../../constants/messages/index.js';
+import { sendWhatsApp, buildOrderConfirmedMessage } from '../notifications/whatsapp.service.js';
+import { broadcastOrderUpdate } from '../orders/orders.sse.js';
 
 export async function createPaymentIntentService(customerId: string, orderId: string) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
@@ -16,10 +18,28 @@ export async function createPaymentIntentService(customerId: string, orderId: st
 
   // Pagamento na entrega — não precisa de Stripe
   if (order.paymentMethod === 'CASH_ON_DELIVERY' || order.paymentMethod === 'CARD_ON_DELIVERY') {
-    await prisma.order.update({
+    const confirmed = await prisma.order.update({
       where: { id: orderId },
       data: { status: 'CONFIRMED' },
+      include: {
+        customer: { select: { name: true, phone: true } },
+        items: { include: { product: true } },
+      },
     });
+
+    broadcastOrderUpdate({ type: 'new_order', order: confirmed });
+
+    if (confirmed.customer.phone) {
+      const msg = buildOrderConfirmedMessage({
+        customerName: confirmed.customer.name,
+        orderNumber: confirmed.orderNumber,
+        orderId: confirmed.id,
+        items: confirmed.items.map((i) => ({ quantity: i.quantity, productName: i.product.name })),
+        totalPrice: confirmed.totalPrice,
+      });
+      sendWhatsApp(confirmed.customer.phone, msg).catch(() => {});
+    }
+
     return {
       method: order.paymentMethod,
       message: 'Pedido confirmado. Pagamento será realizado na entrega.',
