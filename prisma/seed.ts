@@ -44,8 +44,8 @@ async function main() {
 
   const catBurgers = await prisma.category.upsert({
     where: { slug: 'burgers' },
-    update: { name: 'Smash Burgers', position: 1 },
-    create: { name: 'Smash Burgers', slug: 'burgers', position: 1 },
+    update: { name: 'Burgers', position: 1 },
+    create: { name: 'Burgers', slug: 'burgers', position: 1 },
   });
 
   const catChicken = await prisma.category.upsert({
@@ -335,6 +335,19 @@ async function main() {
     price: 10,
     imageUrl: '/burgers/sobremesa-mob-cookie-nutella.png',
   });
+
+  // ─── Porções ─────────────────────────────────────────────────────────────────
+
+  const catPorcoes = await prisma.category.findFirst({ where: { slug: 'porcoes' } });
+  if (catPorcoes) {
+    await upsertProduct({
+      categoryId: catPorcoes.id,
+      name: 'Batata Frita 200g',
+      description: 'Batata frita crocante 200g com sal.',
+      price: 14,
+      imageUrl: '/burgers/batata-frita.png',
+    });
+  }
 
   // ─── Zonas de entrega ─────────────────────────────────────────────────────
 
