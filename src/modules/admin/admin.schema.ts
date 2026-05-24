@@ -47,6 +47,7 @@ export const storeConfigSchema = z.object({
     }),
   ),
   whatsappNumber: z.string().optional(),
+  hideOutOfStock: z.boolean().optional(),
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;

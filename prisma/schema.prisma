@@ -206,10 +206,11 @@ model DeliveryZone {
 }
 
 model StoreConfig {
-  id             String  @id @default(cuid())
-  isOpen         Boolean @default(true)
-  openingHours   Json
-  whatsappNumber String?
+  id               String  @id @default(cuid())
+  isOpen           Boolean @default(true)
+  openingHours     Json
+  whatsappNumber   String?
+  hideOutOfStock   Boolean @default(false)
 }
 
 model Driver {

@@ -220,10 +220,11 @@ export async function getStoreConfigService() {
 
 export async function updateStoreConfigService(data: StoreConfigInput) {
   const existing = await prisma.storeConfig.findFirst();
-  if (existing) {
-    return prisma.storeConfig.update({ where: { id: existing.id }, data });
-  }
-  return prisma.storeConfig.create({ data });
+  const result = existing
+    ? await prisma.storeConfig.update({ where: { id: existing.id }, data })
+    : await prisma.storeConfig.create({ data });
+  invalidateMenuCache();
+  return result;
 }
 
 // ─── Gestão de staff ──────────────────────────────────────────────────────────

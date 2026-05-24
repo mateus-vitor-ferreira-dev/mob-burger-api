@@ -55,12 +55,13 @@ export async function getMenuService() {
   if (menuCache && Date.now() - menuCache.ts < MENU_TTL) {
     return menuCache.data;
   }
+  const config = await prisma.storeConfig.findFirst({ select: { hideOutOfStock: true } });
   const data = await prisma.category.findMany({
     where: { active: true },
     orderBy: { position: 'asc' },
     include: {
       products: {
-        where: { active: true },
+        where: { active: true, ...(config?.hideOutOfStock ? { inStock: true } : {}) },
         orderBy: { name: 'asc' },
         include: {
           options: {
