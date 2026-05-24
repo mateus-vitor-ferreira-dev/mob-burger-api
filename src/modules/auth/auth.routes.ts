@@ -283,8 +283,8 @@ router.patch('/customer/password', authMiddleware, requireCustomer, asyncHandler
 router.post('/forgot-password', authSensitiveLimiter, asyncHandler(forgotPassword));
 router.post('/reset-password', authSensitiveLimiter, asyncHandler(resetPassword));
 
-// ─── Push notifications ───────────────────────────────────────────────────────
-import { saveSubscription, removeSubscription } from '../notifications/push.service.js';
+// ─── Push notifications (cliente) ────────────────────────────────────────────
+import { saveSubscription, removeSubscription, saveStaffSubscription, removeStaffSubscription } from '../notifications/push.service.js';
 
 router.post('/push/subscribe', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
   const sub = req.body as { endpoint: string; keys: { p256dh: string; auth: string } };
@@ -295,6 +295,21 @@ router.post('/push/subscribe', authMiddleware, requireCustomer, asyncHandler(asy
 router.delete('/push/subscribe', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
   const { endpoint } = req.body as { endpoint: string };
   await removeSubscription(endpoint);
+  res.json({ data: { ok: true } });
+}));
+
+// ─── Push notifications (staff) ──────────────────────────────────────────────
+import { requireAdmin } from '../../middlewares/auth.middleware.js';
+
+router.post('/push/staff/subscribe', authMiddleware, requireAdmin, asyncHandler(async (req, res) => {
+  const sub = req.body as { endpoint: string; keys: { p256dh: string; auth: string } };
+  await saveStaffSubscription(req.user!.id, sub);
+  res.json({ data: { ok: true } });
+}));
+
+router.delete('/push/staff/subscribe', authMiddleware, requireAdmin, asyncHandler(async (req, res) => {
+  const { endpoint } = req.body as { endpoint: string };
+  await removeStaffSubscription(endpoint);
   res.json({ data: { ok: true } });
 }));
 

@@ -29,6 +29,38 @@ export async function removeSubscription(endpoint: string) {
   await prisma.pushSubscription.deleteMany({ where: { endpoint } });
 }
 
+export async function saveStaffSubscription(
+  userId: string,
+  sub: { endpoint: string; keys: { p256dh: string; auth: string } },
+) {
+  await prisma.staffPushSubscription.upsert({
+    where: { endpoint: sub.endpoint },
+    create: { userId, endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+    update: { userId },
+  });
+}
+
+export async function removeStaffSubscription(endpoint: string) {
+  await prisma.staffPushSubscription.deleteMany({ where: { endpoint } });
+}
+
+export async function sendPushToAllStaff(payload: { title: string; body: string; url?: string }) {
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE) return;
+  const subs = await prisma.staffPushSubscription.findMany();
+  await Promise.all(
+    subs.map(async (s) => {
+      try {
+        await webpush.sendNotification(
+          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          JSON.stringify(payload),
+        );
+      } catch {
+        await prisma.staffPushSubscription.delete({ where: { id: s.id } }).catch(() => {});
+      }
+    }),
+  );
+}
+
 export async function sendPushToCustomer(
   customerId: string,
   payload: { title: string; body: string; url?: string },

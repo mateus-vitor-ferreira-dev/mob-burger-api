@@ -15,6 +15,7 @@ import {
   updateOrderStatus,
   printOrder,
   assignDriver,
+  cancelOrderByCustomer,
 } from './orders.controller.js';
 import { orderSseHandler } from './orders.sse.js';
 
@@ -105,6 +106,7 @@ router.post(
  *         description: Lista de pedidos do cliente
  */
 router.get('/my', authMiddleware, requireCustomer, asyncHandler(myOrders));
+router.patch('/:id/cancel', authMiddleware, requireCustomer, asyncHandler(cancelOrderByCustomer));
 
 // SSE público — cliente acompanha o próprio pedido em tempo real
 router.get('/:id/stream', orderSseHandler);

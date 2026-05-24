@@ -6,7 +6,7 @@ import { MSG } from '../../constants/messages/index.js';
 import { generateDailyOrderNumber } from '../../utils/orderNumber.js';
 import { broadcastOrderUpdate } from './orders.sse.js';
 import { sendWhatsApp, buildOrderReadyMessage, buildDriverAssignmentMessage } from '../notifications/whatsapp.service.js';
-import { sendPushToCustomer } from '../notifications/push.service.js';
+import { sendPushToCustomer, sendPushToAllStaff } from '../notifications/push.service.js';
 import { validateCouponService } from '../coupons/coupons.service.js';
 import { deductStockForOrder } from '../inventory/inventory.service.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
@@ -150,7 +150,41 @@ export async function createOrderService(customerId: string, data: CreateOrderIn
 
   broadcastOrderUpdate({ type: 'new_order', order });
 
+  sendPushToAllStaff({
+    title: '🍔 Novo pedido!',
+    body: `Pedido #${String(order.orderNumber).padStart(4, '0')} — ${order.customer.name.split(' ')[0]}`,
+    url: '/admin/pedidos',
+  }).catch(() => {});
+
   return order;
+}
+
+export async function cancelOrderByCustomerService(orderId: string, customerId: string) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new AppError('Pedido não encontrado.', HTTP.NOT_FOUND, 'ORDER_NOT_FOUND');
+  if (order.customerId !== customerId)
+    throw new AppError('Acesso negado.', HTTP.FORBIDDEN, 'FORBIDDEN');
+  if (!['AWAITING_PAYMENT', 'CONFIRMED'].includes(order.status))
+    throw new AppError(
+      'Pedido não pode mais ser cancelado.',
+      HTTP.CONFLICT,
+      'CANCEL_NOT_ALLOWED',
+    );
+
+  if (order.paymentStatus === 'PAID' && order.stripePaymentIntentId) {
+    try {
+      await stripe.refunds.create({ payment_intent: order.stripePaymentIntentId });
+    } catch {
+      // Falha no reembolso não bloqueia o cancelamento
+    }
+  }
+
+  const updated = await prisma.order.update({
+    where: { id: orderId },
+    data: { status: 'CANCELLED' },
+  });
+  broadcastOrderUpdate({ type: 'status_update', order: updated });
+  return updated;
 }
 
 export async function getOrderService(id: string) {
