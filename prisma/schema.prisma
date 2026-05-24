@@ -30,18 +30,44 @@ model Category {
 }
 
 model Product {
-  id          String          @id @default(cuid())
+  id          String               @id @default(cuid())
   categoryId  String
-  category    Category        @relation(fields: [categoryId], references: [id])
+  category    Category             @relation(fields: [categoryId], references: [id])
   name        String
   description String?
   price       Float
   imageUrl    String?
-  active      Boolean         @default(true)
+  active      Boolean              @default(true)
+  inStock     Boolean              @default(true)
   options     ProductOption[]
   orderItems  OrderItem[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  ingredients ProductIngredient[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+model Ingredient {
+  id          String               @id @default(cuid())
+  name        String
+  unit        String               @default("unidades")
+  quantity    Float                @default(0)
+  minQuantity Float                @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  productIngredients ProductIngredient[]
+}
+
+model ProductIngredient {
+  id           String     @id @default(cuid())
+  productId    String
+  ingredientId String
+  quantity     Float      @default(1)
+
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, ingredientId])
 }
 
 model ProductOption {

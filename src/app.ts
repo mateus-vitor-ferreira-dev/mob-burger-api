@@ -18,6 +18,7 @@ import adminRoutes from './modules/admin/admin.routes.js';
 import driversRoutes from './modules/drivers/drivers.routes.js';
 import couponsRoutes from './modules/coupons/coupons.routes.js';
 import expensesRoutes from './modules/expenses/expenses.routes.js';
+import inventoryRoutes from './modules/inventory/inventory.routes.js';
 
 validateEnv();
 
@@ -54,6 +55,7 @@ app.use('/api/admin', authMiddleware, requireAdmin, adminRoutes);
 app.use('/api/drivers', authMiddleware, requireAdmin, driversRoutes);
 app.use('/api/coupons', couponsRoutes);
 app.use('/api/expenses', authMiddleware, requireAdmin, expensesRoutes);
+app.use('/api/admin/inventory', authMiddleware, requireAdmin, inventoryRoutes);
 
 // 404
 app.use((_req, res) => {

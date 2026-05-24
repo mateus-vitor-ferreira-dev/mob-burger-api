@@ -7,6 +7,7 @@ import { generateDailyOrderNumber } from '../../utils/orderNumber.js';
 import { broadcastOrderUpdate } from './orders.sse.js';
 import { sendWhatsApp, buildOrderReadyMessage, buildDriverAssignmentMessage } from '../notifications/whatsapp.service.js';
 import { validateCouponService } from '../coupons/coupons.service.js';
+import { deductStockForOrder } from '../inventory/inventory.service.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
 
 const DAY_KEYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'] as const;
@@ -60,7 +61,7 @@ export async function createOrderService(customerId: string, data: CreateOrderIn
 
   const productIds = data.items.map((i) => i.productId);
   const products = await prisma.product.findMany({
-    where: { id: { in: productIds }, active: true },
+    where: { id: { in: productIds }, active: true, inStock: true },
   });
 
   if (products.length !== new Set(productIds).size) {
@@ -231,6 +232,10 @@ export async function updateOrderStatusService(id: string, data: UpdateStatusInp
   });
 
   broadcastOrderUpdate({ type: 'status_update', order: updated });
+
+  if (data.status === 'CONFIRMED') {
+    deductStockForOrder(id).catch(() => {});
+  }
 
   // Notifica cliente quando pedido fica pronto ou saiu para entrega
   if ((data.status === 'READY' || data.status === 'OUT_FOR_DELIVERY') && updated.customer.phone) {
