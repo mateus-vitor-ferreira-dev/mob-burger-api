@@ -12,6 +12,7 @@ import {
 import {
   getStats,
   getDailyRevenue,
+  getTopProducts,
   listCategories,
   createCategory,
   updateCategory,
@@ -61,6 +62,7 @@ const router = Router();
 
 router.get('/stats', asyncHandler(getStats));
 router.get('/stats/daily', asyncHandler(getDailyRevenue));
+router.get('/stats/top-products', asyncHandler(getTopProducts));
 
 // ─── Categorias ───────────────────────────────────────────────────────────────
 

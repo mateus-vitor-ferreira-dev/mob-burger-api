@@ -253,6 +253,29 @@ export async function getDailyRevenueService(month: string) {
   });
 }
 
+// ─── Top produtos mais vendidos ───────────────────────────────────────────────
+
+export async function getTopProductsService(limit = 8) {
+  const grouped = await prisma.orderItem.groupBy({
+    by: ['productId'],
+    _sum: { quantity: true },
+    orderBy: { _sum: { quantity: 'desc' } },
+    take: limit,
+    where: { order: { paymentStatus: 'PAID' } },
+  });
+
+  const productIds = grouped.map((g) => g.productId);
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    select: { id: true, name: true, imageUrl: true, price: true },
+  });
+
+  const map = Object.fromEntries(products.map((p) => [p.id, p]));
+  return grouped
+    .filter((g) => map[g.productId])
+    .map((g) => ({ product: map[g.productId], quantity: g._sum.quantity ?? 0 }));
+}
+
 // ─── Config da loja ───────────────────────────────────────────────────────────
 
 export async function getStoreConfigService() {

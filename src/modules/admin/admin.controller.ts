@@ -153,6 +153,10 @@ export async function getDailyRevenue(req: Request, res: Response) {
   return success(res, await adminService.getDailyRevenueService(month));
 }
 
+export async function getTopProducts(_req: Request, res: Response) {
+  return success(res, await adminService.getTopProductsService());
+}
+
 // ─── Reorder ──────────────────────────────────────────────────────────────────
 
 export async function reorderCategories(req: Request, res: Response) {
