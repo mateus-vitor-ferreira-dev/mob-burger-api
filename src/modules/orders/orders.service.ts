@@ -176,7 +176,7 @@ export async function myOrdersService(customerId: string, page = 1, limit = 20) 
       skip,
       take: limit,
       include: {
-        items: { include: { product: { select: { id: true, name: true, imageUrl: true } } } },
+        items: { include: { product: { select: { id: true, name: true, imageUrl: true, price: true } } } },
         delivery: true,
       },
     }),
