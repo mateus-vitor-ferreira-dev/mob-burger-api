@@ -6,6 +6,7 @@ import { MSG } from '../../constants/messages/index.js';
 import { generateDailyOrderNumber } from '../../utils/orderNumber.js';
 import { broadcastOrderUpdate } from './orders.sse.js';
 import { sendWhatsApp, buildOrderReadyMessage, buildDriverAssignmentMessage } from '../notifications/whatsapp.service.js';
+import { sendPushToCustomer } from '../notifications/push.service.js';
 import { validateCouponService } from '../coupons/coupons.service.js';
 import { deductStockForOrder } from '../inventory/inventory.service.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
@@ -246,13 +247,29 @@ export async function updateOrderStatusService(id: string, data: UpdateStatusInp
   }
 
   // Notifica cliente quando pedido fica pronto ou saiu para entrega
-  if ((data.status === 'READY' || data.status === 'OUT_FOR_DELIVERY') && updated.customer.phone) {
-    const msg = buildOrderReadyMessage({
-      customerName: updated.customer.name,
-      orderNumber: updated.orderNumber,
-      type: updated.type as 'DELIVERY' | 'PICKUP',
-    });
-    sendWhatsApp(updated.customer.phone, msg).catch(() => {});
+  if (data.status === 'READY' || data.status === 'OUT_FOR_DELIVERY') {
+    const pushMessages: Record<string, { title: string; body: string }> = {
+      READY: {
+        title: '🍔 Seu pedido está pronto!',
+        body: updated.type === 'PICKUP' ? 'Retire no balcão agora.' : 'Saindo para entrega em breve.',
+      },
+      OUT_FOR_DELIVERY: {
+        title: '🛵 Pedido saiu para entrega!',
+        body: `Pedido #${String(updated.orderNumber).padStart(4, '0')} a caminho.`,
+      },
+    };
+    const push = pushMessages[data.status];
+    if (push) {
+      sendPushToCustomer(updated.customerId, { ...push, url: `/acompanhar/${updated.id}` }).catch(() => {});
+    }
+    if (updated.customer.phone) {
+      const msg = buildOrderReadyMessage({
+        customerName: updated.customer.name,
+        orderNumber: updated.orderNumber,
+        type: updated.type as 'DELIVERY' | 'PICKUP',
+      });
+      sendWhatsApp(updated.customer.phone, msg).catch(() => {});
+    }
   }
 
   return updated;

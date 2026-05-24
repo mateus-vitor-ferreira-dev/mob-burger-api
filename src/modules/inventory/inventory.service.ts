@@ -20,24 +20,51 @@ export async function createIngredient(data: {
   quantity: number;
   minQuantity: number;
 }) {
-  return prisma.ingredient.create({ data });
+  const ingredient = await prisma.ingredient.create({ data });
+  if (data.quantity > 0) {
+    await prisma.stockMovement.create({
+      data: { ingredientId: ingredient.id, type: 'RESTOCK', delta: data.quantity, reason: 'Cadastro inicial' },
+    });
+  }
+  return ingredient;
 }
 
 export async function updateIngredient(
   id: string,
   data: Partial<{ name: string; unit: string; quantity: number; minQuantity: number }>,
 ) {
+  const before = await prisma.ingredient.findUnique({ where: { id } });
   const ingredient = await prisma.ingredient.update({
     where: { id },
     data,
     include: { productIngredients: true },
   });
 
-  if ('quantity' in data) {
+  if ('quantity' in data && before && data.quantity !== undefined) {
+    const delta = data.quantity - before.quantity;
+    if (delta !== 0) {
+      await prisma.stockMovement.create({
+        data: {
+          ingredientId: id,
+          type: delta > 0 ? 'RESTOCK' : 'ADJUSTMENT',
+          delta,
+          reason: delta > 0 ? 'Reposição manual' : 'Ajuste manual',
+        },
+      });
+    }
     await recomputeInStock(ingredient.productIngredients.map((pi) => pi.productId));
   }
 
   return ingredient;
+}
+
+export async function listStockMovements(ingredientId?: string, limit = 100) {
+  return prisma.stockMovement.findMany({
+    where: ingredientId ? { ingredientId } : undefined,
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    include: { ingredient: { select: { name: true, unit: true } } },
+  });
 }
 
 export async function deleteIngredient(id: string) {
@@ -105,12 +132,20 @@ export async function deductStockForOrder(orderId: string) {
   if (deductions.size === 0) return;
 
   await Promise.all(
-    Array.from(deductions.entries()).map(([ingredientId, qty]) =>
-      prisma.ingredient.update({
+    Array.from(deductions.entries()).map(async ([ingredientId, qty]) => {
+      await prisma.ingredient.update({
         where: { id: ingredientId },
         data: { quantity: { decrement: qty } },
-      }),
-    ),
+      });
+      await prisma.stockMovement.create({
+        data: {
+          ingredientId,
+          type: 'DEDUCTION',
+          delta: -qty,
+          reason: `Pedido #${order.orderNumber}`,
+        },
+      });
+    }),
   );
 
   await recomputeInStock(Array.from(affectedProductIds));

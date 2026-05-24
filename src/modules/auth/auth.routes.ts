@@ -283,4 +283,19 @@ router.patch('/customer/password', authMiddleware, requireCustomer, asyncHandler
 router.post('/forgot-password', authSensitiveLimiter, asyncHandler(forgotPassword));
 router.post('/reset-password', authSensitiveLimiter, asyncHandler(resetPassword));
 
+// ─── Push notifications ───────────────────────────────────────────────────────
+import { saveSubscription, removeSubscription } from '../notifications/push.service.js';
+
+router.post('/push/subscribe', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
+  const sub = req.body as { endpoint: string; keys: { p256dh: string; auth: string } };
+  await saveSubscription(req.user!.id, sub);
+  res.json({ data: { ok: true } });
+}));
+
+router.delete('/push/subscribe', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
+  const { endpoint } = req.body as { endpoint: string };
+  await removeSubscription(endpoint);
+  res.json({ data: { ok: true } });
+}));
+
 export default router;

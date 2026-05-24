@@ -11,15 +11,18 @@ import {
 } from './admin.schema.js';
 import {
   getStats,
+  getDailyRevenue,
   listCategories,
   createCategory,
   updateCategory,
   deleteCategory,
+  reorderCategories,
   listProducts,
   createProduct,
   updateProduct,
   deleteProduct,
   toggleProduct,
+  reorderProducts,
   listProductOptions,
   createProductOption,
   updateProductOption,
@@ -57,6 +60,7 @@ const router = Router();
 // ─── Stats ───────────────────────────────────────────────────────────────────
 
 router.get('/stats', asyncHandler(getStats));
+router.get('/stats/daily', asyncHandler(getDailyRevenue));
 
 // ─── Categorias ───────────────────────────────────────────────────────────────
 
@@ -94,6 +98,7 @@ router.get('/stats', asyncHandler(getStats));
  */
 router.get('/categories', asyncHandler(listCategories));
 router.post('/categories', validate(categorySchema), asyncHandler(createCategory));
+router.patch('/categories/reorder', asyncHandler(reorderCategories));
 
 /**
  * @openapi
@@ -238,6 +243,7 @@ router.delete('/products/:id', asyncHandler(deleteProduct));
  *         description: Status do produto alterado
  */
 router.patch('/products/:id/toggle', asyncHandler(toggleProduct));
+router.patch('/products/reorder', asyncHandler(reorderProducts));
 
 // ─── Opções de personalização ─────────────────────────────────────────────────
 

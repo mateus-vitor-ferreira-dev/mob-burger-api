@@ -39,6 +39,7 @@ model Product {
   imageUrl    String?
   active      Boolean              @default(true)
   inStock     Boolean              @default(true)
+  position    Int                  @default(0)
   options     ProductOption[]
   orderItems  OrderItem[]
   ingredients ProductIngredient[]
@@ -56,6 +57,20 @@ model Ingredient {
   updatedAt   DateTime             @updatedAt
 
   productIngredients ProductIngredient[]
+  movements          StockMovement[]
+}
+
+model StockMovement {
+  id           String     @id @default(cuid())
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  type         String
+  delta        Float
+  reason       String?
+  createdAt    DateTime   @default(now())
+
+  @@index([ingredientId])
+  @@index([createdAt])
 }
 
 model ProductIngredient {
@@ -95,17 +110,30 @@ model OptionItem {
 }
 
 model Customer {
-  id             String         @id @default(cuid())
+  id             String             @id @default(cuid())
   name           String
-  email          String         @unique
+  email          String             @unique
   passwordHash   String?
-  googleId       String?        @unique
+  googleId       String?            @unique
   phone          String?
   defaultAddress Json?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   orders         Order[]
   deliveries     DeliveryInfo[]
+  pushSubs       PushSubscription[]
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
 }
 
 model Order {

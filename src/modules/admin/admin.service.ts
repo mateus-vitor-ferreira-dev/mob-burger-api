@@ -18,6 +18,20 @@ export async function listCategoriesService() {
   return prisma.category.findMany({ orderBy: { position: 'asc' } });
 }
 
+export async function reorderCategoriesService(items: { id: string; position: number }[]) {
+  await Promise.all(
+    items.map((item) => prisma.category.update({ where: { id: item.id }, data: { position: item.position } })),
+  );
+  invalidateMenuCache();
+}
+
+export async function reorderProductsService(items: { id: string; position: number }[]) {
+  await Promise.all(
+    items.map((item) => prisma.product.update({ where: { id: item.id }, data: { position: item.position } })),
+  );
+  invalidateMenuCache();
+}
+
 export async function createCategoryService(data: CategoryInput) {
   const result = await prisma.category.create({ data });
   invalidateMenuCache();
@@ -210,6 +224,33 @@ export async function getStatsService(from?: Date, to?: Date) {
     todayOrders: todayCount,
     rangeOrders: rangeCount,
   }
+}
+
+// ─── Daily revenue breakdown ──────────────────────────────────────────────────
+
+export async function getDailyRevenueService(month: string) {
+  const [year, m] = month.split('-').map(Number);
+  const startOfMonth = new Date(year, m - 1, 1);
+  const startOfNextMonth = new Date(year, m, 1);
+
+  const orders = await prisma.order.findMany({
+    where: { paymentStatus: 'PAID', createdAt: { gte: startOfMonth, lt: startOfNextMonth } },
+    select: { totalPrice: true, createdAt: true },
+  });
+
+  const byDay: Record<string, number> = {};
+  for (const order of orders) {
+    const day = new Date(order.createdAt)
+      .toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    byDay[day] = (byDay[day] ?? 0) + order.totalPrice;
+  }
+
+  const lastDay = new Date(year, m, 0).getDate();
+  return Array.from({ length: lastDay }, (_, i) => {
+    const d = i + 1;
+    const key = `${month}-${String(d).padStart(2, '0')}`;
+    return { day: key, revenue: byDay[key] ?? 0 };
+  });
 }
 
 // ─── Config da loja ───────────────────────────────────────────────────────────

@@ -148,6 +148,23 @@ export async function getStats(req: Request, res: Response) {
   return success(res, await adminService.getStatsService(from, to));
 }
 
+export async function getDailyRevenue(req: Request, res: Response) {
+  const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
+  return success(res, await adminService.getDailyRevenueService(month));
+}
+
+// ─── Reorder ──────────────────────────────────────────────────────────────────
+
+export async function reorderCategories(req: Request, res: Response) {
+  await adminService.reorderCategoriesService(req.body as { id: string; position: number }[]);
+  return success(res, { ok: true });
+}
+
+export async function reorderProducts(req: Request, res: Response) {
+  await adminService.reorderProductsService(req.body as { id: string; position: number }[]);
+  return success(res, { ok: true });
+}
+
 // ─── Config da loja ───────────────────────────────────────────────────────────
 
 export async function getStoreConfig(_req: Request, res: Response) {
