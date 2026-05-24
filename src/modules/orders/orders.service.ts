@@ -184,8 +184,14 @@ export async function myOrdersService(customerId: string, page = 1, limit = 20) 
   return { orders, total, page, pages: Math.ceil(total / limit) };
 }
 
-export async function listOrdersService(status?: string, page = 1, limit = 50) {
-  const where = status ? { status: status as never } : {};
+export async function listOrdersService(status?: string, page = 1, limit = 50, from?: string, to?: string) {
+  const where: Record<string, unknown> = status ? { status: status as never } : {};
+  if (from || to) {
+    where.createdAt = {
+      ...(from ? { gte: new Date(from) } : {}),
+      ...(to ? { lte: new Date(to) } : {}),
+    };
+  }
   const skip = (page - 1) * limit;
   const [orders, total] = await Promise.all([
     prisma.order.findMany({
@@ -216,8 +222,10 @@ export async function updateOrderStatusService(id: string, data: UpdateStatusInp
   const updateData: Record<string, unknown> = { status: data.status };
 
   // Reembolso automático ao cancelar pedido já pago
-  if (data.status === 'CANCELLED' && order.paymentStatus === 'PAID' && order.stripePaymentId) {
-    await stripe.refunds.create({ payment_intent: order.stripePaymentId });
+  if (data.status === 'CANCELLED' && order.paymentStatus === 'PAID') {
+    if (order.stripePaymentId) {
+      await stripe.refunds.create({ payment_intent: order.stripePaymentId });
+    }
     updateData.paymentStatus = 'REFUNDED';
   }
 

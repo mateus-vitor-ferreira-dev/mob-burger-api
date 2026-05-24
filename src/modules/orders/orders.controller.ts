@@ -32,7 +32,9 @@ export async function myOrders(req: Request, res: Response) {
 export async function listOrders(req: Request, res: Response) {
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 50;
-  const result = await listOrdersService(req.query.status as string | undefined, page, limit);
+  const from = req.query.from as string | undefined;
+  const to = req.query.to as string | undefined;
+  const result = await listOrdersService(req.query.status as string | undefined, page, limit, from, to);
   return success(res, result);
 }
 
