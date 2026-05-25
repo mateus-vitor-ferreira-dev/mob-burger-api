@@ -284,7 +284,13 @@ router.post('/forgot-password', authSensitiveLimiter, asyncHandler(forgotPasswor
 router.post('/reset-password', authSensitiveLimiter, asyncHandler(resetPassword));
 
 // ─── Push notifications (cliente) ────────────────────────────────────────────
-import { saveSubscription, removeSubscription, saveStaffSubscription, removeStaffSubscription } from '../notifications/push.service.js';
+import { saveSubscription, removeSubscription, saveStaffSubscription, removeStaffSubscription, saveExpoPushToken } from '../notifications/push.service.js';
+
+router.put('/customer/expo-token', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
+  const { token } = req.body as { token: string };
+  if (token) await saveExpoPushToken(req.user!.id, token);
+  res.json({ data: { ok: true } });
+}));
 
 router.post('/push/subscribe', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
   const sub = req.body as { endpoint: string; keys: { p256dh: string; auth: string } };
