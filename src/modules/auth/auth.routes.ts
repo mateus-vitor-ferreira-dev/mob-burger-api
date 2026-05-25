@@ -283,6 +283,35 @@ router.patch('/customer/password', authMiddleware, requireCustomer, asyncHandler
 router.post('/forgot-password', authSensitiveLimiter, asyncHandler(forgotPassword));
 router.post('/reset-password', authSensitiveLimiter, asyncHandler(resetPassword));
 
+// ─── Favoritos (cliente) ──────────────────────────────────────────────────────
+import prisma from '../../config/prisma.js';
+
+router.get('/customer/favorites', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
+  const favorites = await prisma.customerFavorite.findMany({
+    where: { customerId: req.user!.id },
+    select: { productId: true },
+  });
+  res.json({ data: favorites.map((f) => f.productId) });
+}));
+
+router.post('/customer/favorites', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
+  const { productId } = req.body as { productId: string };
+  if (!productId) return res.status(400).json({ error: { message: 'productId obrigatório' } });
+  await prisma.customerFavorite.upsert({
+    where: { customerId_productId: { customerId: req.user!.id, productId } },
+    create: { customerId: req.user!.id, productId },
+    update: {},
+  });
+  res.json({ data: { ok: true } });
+}));
+
+router.delete('/customer/favorites/:productId', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
+  await prisma.customerFavorite.deleteMany({
+    where: { customerId: req.user!.id, productId: req.params.productId },
+  });
+  res.json({ data: { ok: true } });
+}));
+
 // ─── Push notifications (cliente) ────────────────────────────────────────────
 import { saveSubscription, removeSubscription, saveStaffSubscription, removeStaffSubscription, saveExpoPushToken } from '../notifications/push.service.js';
 

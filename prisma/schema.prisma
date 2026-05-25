@@ -54,6 +54,7 @@ model Product {
   options     ProductOption[]
   orderItems  OrderItem[]
   ingredients ProductIngredient[]
+  favorites   CustomerFavorite[]
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
 }
@@ -134,6 +135,19 @@ model Customer {
   orders         Order[]
   deliveries     DeliveryInfo[]
   pushSubs       PushSubscription[]
+  favorites      CustomerFavorite[]
+}
+
+model CustomerFavorite {
+  id         String   @id @default(cuid())
+  customerId String
+  productId  String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([customerId, productId])
+  @@index([customerId])
 }
 
 model PushSubscription {
