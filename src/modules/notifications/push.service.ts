@@ -1,5 +1,8 @@
 import webpush from 'web-push';
+import { Expo } from 'expo-server-sdk';
 import prisma from '../../config/prisma.js';
+
+const expo = new Expo();
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY ?? '';
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY ?? '';
@@ -81,4 +84,42 @@ export async function sendPushToCustomer(
       }
     }),
   );
+}
+
+export async function sendExpoPushToCustomer(
+  customerId: string,
+  payload: { title: string; body: string; data?: Record<string, unknown> },
+) {
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    select: { expoPushToken: true },
+  });
+
+  const token = customer?.expoPushToken;
+  if (!token || !Expo.isExpoPushToken(token)) return;
+
+  try {
+    const [ticket] = await expo.sendPushNotificationsAsync([
+      {
+        to: token,
+        title: payload.title,
+        body: payload.body,
+        data: payload.data ?? {},
+        sound: 'default',
+      },
+    ]);
+
+    if (ticket.status === 'error') {
+      if (ticket.details?.error === 'DeviceNotRegistered') {
+        await prisma.customer.update({ where: { id: customerId }, data: { expoPushToken: null } });
+      }
+    }
+  } catch {
+    // Non-critical — ignore push failures
+  }
+}
+
+export async function saveExpoPushToken(customerId: string, token: string) {
+  if (!Expo.isExpoPushToken(token)) return;
+  await prisma.customer.update({ where: { id: customerId }, data: { expoPushToken: token } });
 }

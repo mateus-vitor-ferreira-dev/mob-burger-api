@@ -6,7 +6,7 @@ import { MSG } from '../../constants/messages/index.js';
 import { generateDailyOrderNumber } from '../../utils/orderNumber.js';
 import { broadcastOrderUpdate } from './orders.sse.js';
 import { sendWhatsApp, buildOrderReadyMessage, buildDriverAssignmentMessage } from '../notifications/whatsapp.service.js';
-import { sendPushToCustomer, sendPushToAllStaff } from '../notifications/push.service.js';
+import { sendPushToCustomer, sendPushToAllStaff, sendExpoPushToCustomer } from '../notifications/push.service.js';
 import { validateCouponService } from '../coupons/coupons.service.js';
 import { deductStockForOrder } from '../inventory/inventory.service.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
@@ -295,6 +295,7 @@ export async function updateOrderStatusService(id: string, data: UpdateStatusInp
     const push = pushMessages[data.status];
     if (push) {
       sendPushToCustomer(updated.customerId, { ...push, url: `/acompanhar/${updated.id}` }).catch(() => {});
+      sendExpoPushToCustomer(updated.customerId, { ...push, data: { orderId: updated.id } }).catch(() => {});
     }
     if (updated.customer.phone) {
       const msg = buildOrderReadyMessage({
