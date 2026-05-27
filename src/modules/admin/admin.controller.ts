@@ -9,6 +9,7 @@ import type {
   OptionItemInput,
   DeliveryZoneInput,
   StoreConfigInput,
+  GlobalExtraInput,
 } from './admin.schema.js';
 
 // ─── Categorias ───────────────────────────────────────────────────────────────
@@ -194,4 +195,27 @@ export async function deleteStaff(req: Request, res: Response) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await adminService.deleteStaffService(req.params.id as string, (req as any).user!.id);
   return success(res, null, HTTP.NO_CONTENT);
+}
+
+// ─── Adicionais globais ───────────────────────────────────────────────────────
+
+export async function listAllExtras(_req: Request, res: Response) {
+  return success(res, await adminService.listAllExtrasService());
+}
+
+export async function createExtra(req: Request, res: Response) {
+  return success(res, await adminService.createExtraService(req.body as GlobalExtraInput), HTTP.CREATED);
+}
+
+export async function updateExtra(req: Request, res: Response) {
+  return success(res, await adminService.updateExtraService(req.params.id as string, req.body as GlobalExtraInput));
+}
+
+export async function deleteExtra(req: Request, res: Response) {
+  await adminService.deleteExtraService(req.params.id as string);
+  return res.status(HTTP.NO_CONTENT).send();
+}
+
+export async function toggleExtra(req: Request, res: Response) {
+  return success(res, await adminService.toggleExtraService(req.params.id as string));
 }

@@ -50,9 +50,17 @@ export const storeConfigSchema = z.object({
   hideOutOfStock: z.boolean().optional(),
 });
 
+export const globalExtraSchema = z.object({
+  name: z.string().min(2).max(100),
+  price: z.number().min(0),
+  imageUrl: z.string().min(1).nullish(),
+  active: z.boolean().default(true),
+});
+
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type ProductInput = z.infer<typeof productSchema>;
 export type ProductOptionInput = z.infer<typeof productOptionSchema>;
 export type OptionItemInput = z.infer<typeof optionItemSchema>;
 export type DeliveryZoneInput = z.infer<typeof deliveryZoneSchema>;
 export type StoreConfigInput = z.infer<typeof storeConfigSchema>;
+export type GlobalExtraInput = z.infer<typeof globalExtraSchema>;

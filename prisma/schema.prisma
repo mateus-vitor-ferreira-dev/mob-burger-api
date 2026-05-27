@@ -233,11 +233,12 @@ model OrderItem {
 }
 
 model GlobalExtra {
-  id      String                 @id @default(cuid())
-  name    String
-  price   Float
-  active  Boolean                @default(true)
-  extras  OrderItemGlobalExtra[]
+  id       String                 @id @default(cuid())
+  name     String
+  price    Float
+  imageUrl String?
+  active   Boolean                @default(true)
+  extras   OrderItemGlobalExtra[]
 }
 
 model OrderItemGlobalExtra {

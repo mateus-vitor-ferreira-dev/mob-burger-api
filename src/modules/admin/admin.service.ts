@@ -318,3 +318,33 @@ export async function deleteStaffService(id: string, requesterId: string) {
   if (!user) throw new AppError('Usuário não encontrado.', HTTP.NOT_FOUND, 'NOT_FOUND');
   return prisma.user.delete({ where: { id } });
 }
+
+// ─── Adicionais globais ───────────────────────────────────────────────────────
+
+import type { GlobalExtraInput } from './admin.schema.js';
+
+export async function listAllExtrasService() {
+  return prisma.globalExtra.findMany({ orderBy: { name: 'asc' } });
+}
+
+export async function createExtraService(data: GlobalExtraInput) {
+  return prisma.globalExtra.create({ data: { name: data.name, price: data.price, imageUrl: data.imageUrl ?? null, active: data.active } });
+}
+
+export async function updateExtraService(id: string, data: GlobalExtraInput) {
+  const extra = await prisma.globalExtra.findUnique({ where: { id } });
+  if (!extra) throw new AppError('Adicional não encontrado.', HTTP.NOT_FOUND, 'EXTRA_NOT_FOUND');
+  return prisma.globalExtra.update({ where: { id }, data: { name: data.name, price: data.price, imageUrl: data.imageUrl ?? null, active: data.active } });
+}
+
+export async function deleteExtraService(id: string) {
+  const extra = await prisma.globalExtra.findUnique({ where: { id } });
+  if (!extra) throw new AppError('Adicional não encontrado.', HTTP.NOT_FOUND, 'EXTRA_NOT_FOUND');
+  return prisma.globalExtra.delete({ where: { id } });
+}
+
+export async function toggleExtraService(id: string) {
+  const extra = await prisma.globalExtra.findUnique({ where: { id } });
+  if (!extra) throw new AppError('Adicional não encontrado.', HTTP.NOT_FOUND, 'EXTRA_NOT_FOUND');
+  return prisma.globalExtra.update({ where: { id }, data: { active: !extra.active } });
+}

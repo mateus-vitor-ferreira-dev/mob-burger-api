@@ -8,6 +8,7 @@ import {
   optionItemSchema,
   deliveryZoneSchema,
   storeConfigSchema,
+  globalExtraSchema,
 } from './admin.schema.js';
 import {
   getStats,
@@ -39,6 +40,11 @@ import {
   listStaff,
   createStaff,
   deleteStaff,
+  listAllExtras,
+  createExtra,
+  updateExtra,
+  deleteExtra,
+  toggleExtra,
 } from './admin.controller.js';
 
 const router = Router();
@@ -514,5 +520,12 @@ router.put('/config', validate(storeConfigSchema), asyncHandler(updateStoreConfi
 router.get('/staff', asyncHandler(listStaff));
 router.post('/staff', asyncHandler(createStaff));
 router.delete('/staff/:id', asyncHandler(deleteStaff));
+
+// ─── Adicionais globais ───────────────────────────────────────────────────────
+router.get('/extras', asyncHandler(listAllExtras));
+router.post('/extras', validate(globalExtraSchema), asyncHandler(createExtra));
+router.put('/extras/:id', validate(globalExtraSchema), asyncHandler(updateExtra));
+router.delete('/extras/:id', asyncHandler(deleteExtra));
+router.patch('/extras/:id/toggle', asyncHandler(toggleExtra));
 
 export default router;
