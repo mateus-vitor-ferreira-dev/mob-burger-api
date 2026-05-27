@@ -51,6 +51,7 @@ model Product {
   active      Boolean              @default(true)
   inStock     Boolean              @default(true)
   position    Int                  @default(0)
+  comboConfig Json?
   options     ProductOption[]
   orderItems  OrderItem[]
   ingredients ProductIngredient[]

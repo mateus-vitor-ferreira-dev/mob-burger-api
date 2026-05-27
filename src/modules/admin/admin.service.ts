@@ -348,3 +348,58 @@ export async function toggleExtraService(id: string) {
   if (!extra) throw new AppError('Adicional não encontrado.', HTTP.NOT_FOUND, 'EXTRA_NOT_FOUND');
   return prisma.globalExtra.update({ where: { id }, data: { active: !extra.active } });
 }
+
+// ─── Combo config ─────────────────────────────────────────────────────────────
+
+import type { ComboConfigInput } from './admin.schema.js';
+
+export async function setComboConfigService(productId: string, config: ComboConfigInput) {
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) throw new AppError('Produto não encontrado.', HTTP.NOT_FOUND, 'PRODUCT_NOT_FOUND');
+
+  // Fetch burgers from allowed category slugs (active, inStock)
+  const categories = await prisma.category.findMany({
+    where: { slug: { in: config.allowedSlugs }, active: true },
+    include: {
+      products: {
+        where: { active: true, inStock: true },
+        orderBy: { name: 'asc' },
+      },
+    },
+  });
+  const burgers = categories.flatMap((c) => c.products);
+  if (burgers.length === 0) {
+    throw new AppError('Nenhum produto encontrado nas categorias selecionadas.', HTTP.BAD_REQUEST, 'NO_BURGERS');
+  }
+
+  // Remove all existing options for this product (they'll be replaced)
+  await prisma.productOption.deleteMany({ where: { productId } });
+
+  // Create one RADIO option group per burger slot
+  for (let slot = 1; slot <= config.numBurgers; slot++) {
+    const label = config.numBurgers === 1 ? 'Escolha o Lanche' : `Lanche ${slot}`;
+    await prisma.productOption.create({
+      data: {
+        productId,
+        label,
+        type: 'RADIO',
+        required: true,
+        items: {
+          create: burgers.map((b) => ({ name: b.name, additionalPrice: b.price })),
+        },
+      },
+    });
+  }
+
+  const drinksCost = config.numDrinks * config.drinkCostPrice;
+  const updated = await prisma.product.update({
+    where: { id: productId },
+    data: {
+      comboConfig: config as object,
+      price: drinksCost,
+    },
+  });
+
+  invalidateMenuCache();
+  return updated;
+}

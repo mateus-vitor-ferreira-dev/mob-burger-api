@@ -9,6 +9,7 @@ import {
   deliveryZoneSchema,
   storeConfigSchema,
   globalExtraSchema,
+  comboConfigSchema,
 } from './admin.schema.js';
 import {
   getStats,
@@ -45,6 +46,7 @@ import {
   updateExtra,
   deleteExtra,
   toggleExtra,
+  setComboConfig,
 } from './admin.controller.js';
 
 const router = Router();
@@ -527,5 +529,8 @@ router.post('/extras', validate(globalExtraSchema), asyncHandler(createExtra));
 router.put('/extras/:id', validate(globalExtraSchema), asyncHandler(updateExtra));
 router.delete('/extras/:id', asyncHandler(deleteExtra));
 router.patch('/extras/:id/toggle', asyncHandler(toggleExtra));
+
+// ─── Combo config ─────────────────────────────────────────────────────────────
+router.post('/products/:id/combo-config', validate(comboConfigSchema), asyncHandler(setComboConfig));
 
 export default router;

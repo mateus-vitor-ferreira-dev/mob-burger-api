@@ -10,6 +10,7 @@ import type {
   DeliveryZoneInput,
   StoreConfigInput,
   GlobalExtraInput,
+  ComboConfigInput,
 } from './admin.schema.js';
 
 // ─── Categorias ───────────────────────────────────────────────────────────────
@@ -218,4 +219,13 @@ export async function deleteExtra(req: Request, res: Response) {
 
 export async function toggleExtra(req: Request, res: Response) {
   return success(res, await adminService.toggleExtraService(req.params.id as string));
+}
+
+// ─── Combo config ─────────────────────────────────────────────────────────────
+
+export async function setComboConfig(req: Request, res: Response) {
+  return success(
+    res,
+    await adminService.setComboConfigService(req.params.id as string, req.body as ComboConfigInput),
+  );
 }
