@@ -18,9 +18,10 @@ export async function getDeliveryZonesService() {
 function computeScheduledOpen(
   openingHours: Record<string, { open: string; close: string; closed: boolean }>,
 ): boolean {
-  const now = new Date();
+  // Convert to São Paulo time so the server (UTC) matches the store's local hours
+  const nowBR = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
   const dayKeys = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
-  const dayKey = dayKeys[now.getDay()];
+  const dayKey = dayKeys[nowBR.getDay()];
   const day = openingHours[dayKey];
   if (!day || day.closed) return false;
 
@@ -29,7 +30,7 @@ function computeScheduledOpen(
     return h * 60 + (m || 0);
   };
 
-  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const nowMins = nowBR.getHours() * 60 + nowBR.getMinutes();
   const openMins = toMins(day.open);
   let closeMins = toMins(day.close);
   if (closeMins === 0) closeMins = 24 * 60; // meia-noite
