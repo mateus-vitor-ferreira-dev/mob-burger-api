@@ -4,11 +4,17 @@ const orderItemOptionSchema = z.object({
   optionItemId: z.string().cuid(),
 });
 
+const orderItemExtraSchema = z.object({
+  extraId: z.string().cuid(),
+  qty: z.number().int().min(1).default(1),
+});
+
 const orderItemSchema = z.object({
   productId: z.string().cuid(),
   quantity: z.number().int().min(1),
   observations: z.string().max(200).optional(),
   options: z.array(orderItemOptionSchema).default([]),
+  extras: z.array(orderItemExtraSchema).default([]),
 });
 
 const deliveryInfoSchema = z.object({
@@ -26,6 +32,8 @@ export const createOrderSchema = z
     items: z.array(orderItemSchema).min(1),
     delivery: deliveryInfoSchema.optional(),
     couponCode: z.string().max(50).optional(),
+    changeFor: z.number().min(0).optional(),
+    notes: z.string().max(500).optional(),
   })
   .refine((data) => data.type === 'PICKUP' || (data.type === 'DELIVERY' && data.delivery), {
     message: 'Endereço de entrega é obrigatório para delivery.',

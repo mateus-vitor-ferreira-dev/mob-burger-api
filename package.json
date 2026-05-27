@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development nodemon --exec \"tsx --env-file=.env.development\" --ext ts,json src/server.ts",
-    "start": "NODE_ENV=production tsx --env-file=.env.production src/server.ts",
+    "start": "prisma migrate deploy && NODE_ENV=production tsx --env-file=.env.production src/server.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",

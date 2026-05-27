@@ -171,6 +171,8 @@ model Order {
   status          OrderStatus   @default(AWAITING_PAYMENT)
   totalPrice      Float
   discountAmount  Float         @default(0)
+  changeFor       Float?
+  notes           String?
   paymentMethod   PaymentMethod
   paymentStatus   PaymentStatus @default(PENDING)
   stripePaymentId String?
@@ -218,15 +220,33 @@ enum PaymentStatus {
 }
 
 model OrderItem {
-  id           String            @id @default(cuid())
+  id           String                 @id @default(cuid())
   orderId      String
-  order        Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order        Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId    String
-  product      Product           @relation(fields: [productId], references: [id])
+  product      Product                @relation(fields: [productId], references: [id])
   quantity     Int
   unitPrice    Float
   observations String?
   options      OrderItemOption[]
+  extras       OrderItemGlobalExtra[]
+}
+
+model GlobalExtra {
+  id      String                 @id @default(cuid())
+  name    String
+  price   Float
+  active  Boolean                @default(true)
+  extras  OrderItemGlobalExtra[]
+}
+
+model OrderItemGlobalExtra {
+  id          String      @id @default(cuid())
+  orderItemId String
+  orderItem   OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  extraId     String
+  extra       GlobalExtra @relation(fields: [extraId], references: [id])
+  qty         Int         @default(1)
 }
 
 model OrderItemOption {

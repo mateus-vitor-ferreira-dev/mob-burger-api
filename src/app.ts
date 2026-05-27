@@ -19,6 +19,7 @@ import driversRoutes from './modules/drivers/drivers.routes.js';
 import couponsRoutes from './modules/coupons/coupons.routes.js';
 import expensesRoutes from './modules/expenses/expenses.routes.js';
 import inventoryRoutes from './modules/inventory/inventory.routes.js';
+import extrasRoutes from './modules/extras/extras.routes.js';
 
 validateEnv();
 
@@ -45,6 +46,7 @@ app.get('/health', (_req, res) => {
 app.get('/api/orders/stream', authMiddleware, sseHandler);
 
 // Rotas públicas
+app.use('/api/extras', extrasRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/payments', paymentsRoutes);

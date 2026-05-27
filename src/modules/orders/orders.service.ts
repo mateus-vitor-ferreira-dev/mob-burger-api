@@ -75,13 +75,23 @@ export async function createOrderService(customerId: string, data: CreateOrderIn
     ? await prisma.optionItem.findMany({ where: { id: { in: optionItemIds } } })
     : [];
 
+  // Busca todos os GlobalExtras referenciados
+  const extraIds = data.items.flatMap((i) => (i.extras ?? []).map((e) => e.extraId));
+  const globalExtras = extraIds.length
+    ? await prisma.globalExtra.findMany({ where: { id: { in: extraIds }, active: true } })
+    : [];
+
   const itemsTotal = data.items.reduce((sum, item) => {
     const product = products.find((p) => p.id === item.productId)!;
     const optionsTotal = item.options.reduce((oSum, opt) => {
       const oi = optionItems.find((x) => x.id === opt.optionItemId);
       return oSum + (oi?.additionalPrice ?? 0);
     }, 0);
-    return sum + (product.price + optionsTotal) * item.quantity;
+    const extrasTotal = (item.extras ?? []).reduce((eSum, ext) => {
+      const ge = globalExtras.find((x) => x.id === ext.extraId);
+      return eSum + (ge?.price ?? 0) * ext.qty;
+    }, 0);
+    return sum + (product.price + optionsTotal + extrasTotal) * item.quantity;
   }, 0);
 
   let deliveryFee = 0;
@@ -112,6 +122,8 @@ export async function createOrderService(customerId: string, data: CreateOrderIn
       discountAmount,
       couponId,
       paymentMethod: data.paymentMethod,
+      changeFor: data.changeFor,
+      notes: data.notes,
       items: {
         create: data.items.map((item) => {
           const product = products.find((p) => p.id === item.productId)!;
@@ -123,6 +135,9 @@ export async function createOrderService(customerId: string, data: CreateOrderIn
             options: {
               create: item.options.map((o) => ({ optionItemId: o.optionItemId })),
             },
+            ...(item.extras?.length
+              ? { extras: { create: item.extras.map((e) => ({ extraId: e.extraId, qty: e.qty })) } }
+              : {}),
           };
         }),
       },
