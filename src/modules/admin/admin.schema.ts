@@ -57,6 +57,10 @@ export const globalExtraSchema = z.object({
   active: z.boolean().default(true),
 });
 
+export const productPriceSchema = z.object({
+  price: z.number().positive(),
+});
+
 export const comboConfigSchema = z.object({
   numBurgers: z.number().int().min(1).max(8),
   numDrinks: z.number().int().min(0).max(8),
@@ -74,4 +78,5 @@ export type OptionItemInput = z.infer<typeof optionItemSchema>;
 export type DeliveryZoneInput = z.infer<typeof deliveryZoneSchema>;
 export type StoreConfigInput = z.infer<typeof storeConfigSchema>;
 export type GlobalExtraInput = z.infer<typeof globalExtraSchema>;
+export type ProductPriceInput = z.infer<typeof productPriceSchema>;
 export type ComboConfigInput = z.infer<typeof comboConfigSchema>;

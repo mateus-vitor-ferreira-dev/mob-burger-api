@@ -98,9 +98,30 @@ export async function deleteProductService(id: string) {
 }
 
 export async function toggleProductService(id: string) {
-  const product = await prisma.product.findUnique({ where: { id } });
+  const product = await prisma.product.findUnique({ where: { id }, include: { category: true } });
   if (!product) throw new AppError(MSG.menu.productNotFound, HTTP.NOT_FOUND, 'PRODUCT_NOT_FOUND');
   const result = await prisma.product.update({ where: { id }, data: { active: !product.active } });
+  invalidateMenuCache();
+  resyncCombosForCategory(product.category.slug).catch(() => {});
+  return result;
+}
+
+async function resyncCombosForCategory(categorySlug: string) {
+  const all = await prisma.product.findMany({ select: { id: true, comboConfig: true } });
+  for (const p of all) {
+    if (!p.comboConfig) continue;
+    const cfg = p.comboConfig as ComboConfigInput;
+    const slugs = [...(cfg.allowedSlugs ?? []), ...(cfg.drinkSlugs ?? []), ...(cfg.dessertSlugs ?? [])];
+    if (slugs.includes(categorySlug)) {
+      await setComboConfigService(p.id, cfg).catch(() => {});
+    }
+  }
+}
+
+export async function patchProductPriceService(id: string, price: number) {
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product) throw new AppError(MSG.menu.productNotFound, HTTP.NOT_FOUND, 'PRODUCT_NOT_FOUND');
+  const result = await prisma.product.update({ where: { id }, data: { price } });
   invalidateMenuCache();
   return result;
 }

@@ -11,6 +11,7 @@ import type {
   StoreConfigInput,
   GlobalExtraInput,
   ComboConfigInput,
+  ProductPriceInput,
 } from './admin.schema.js';
 
 // ─── Categorias ───────────────────────────────────────────────────────────────
@@ -67,6 +68,13 @@ export async function deleteProduct(req: Request, res: Response) {
 
 export async function toggleProduct(req: Request, res: Response) {
   return success(res, await adminService.toggleProductService(req.params.id as string));
+}
+
+export async function patchProductPrice(req: Request, res: Response) {
+  return success(
+    res,
+    await adminService.patchProductPriceService(req.params.id as string, (req.body as ProductPriceInput).price),
+  );
 }
 
 // ─── Opções de personalização ─────────────────────────────────────────────────

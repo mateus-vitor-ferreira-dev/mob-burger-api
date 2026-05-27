@@ -10,6 +10,7 @@ import {
   storeConfigSchema,
   globalExtraSchema,
   comboConfigSchema,
+  productPriceSchema,
 } from './admin.schema.js';
 import {
   getStats,
@@ -47,6 +48,7 @@ import {
   deleteExtra,
   toggleExtra,
   setComboConfig,
+  patchProductPrice,
 } from './admin.controller.js';
 
 const router = Router();
@@ -253,6 +255,7 @@ router.delete('/products/:id', asyncHandler(deleteProduct));
  *         description: Status do produto alterado
  */
 router.patch('/products/:id/toggle', asyncHandler(toggleProduct));
+router.patch('/products/:id/price', validate(productPriceSchema), asyncHandler(patchProductPrice));
 router.patch('/products/reorder', asyncHandler(reorderProducts));
 
 // ─── Opções de personalização ─────────────────────────────────────────────────
