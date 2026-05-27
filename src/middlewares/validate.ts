@@ -8,8 +8,9 @@ export const validate =
   (req: Request, _res: Response, next: NextFunction): void => {
     const result = schema.safeParse(req.body);
     if (!result.success) {
+      const details = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ');
       throw new AppError(
-        'Dados inválidos. Verifique os campos e tente novamente.',
+        `Dados inválidos: ${details}`,
         HTTP.BAD_REQUEST,
         'VALIDATION_ERROR',
       );
