@@ -14,9 +14,9 @@ export const categorySchema = z.object({
 export const productSchema = z.object({
   categoryId: z.string().cuid(),
   name: z.string().min(2).max(100),
-  description: z.string().max(500).optional(),
+  description: z.string().max(500).nullish(),
   price: z.number().positive(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().min(1).nullish(),
   active: z.boolean().default(true),
 });
 
