@@ -1,4 +1,5 @@
 import prisma from '../../config/prisma.js';
+import type { Prisma } from '@prisma/client';
 
 interface ExpenseItem {
   name: string;
@@ -27,7 +28,7 @@ export async function createExpenseService(data: CreateExpenseInput) {
       type: data.type,
       amount: Number(data.amount),
       month: data.month,
-      items: data.items ?? [],
+      items: (data.items ?? []) as unknown as Prisma.InputJsonValue,
     },
   });
 }
@@ -40,7 +41,7 @@ export async function updateExpenseService(id: string, data: Partial<CreateExpen
       type: data.type,
       amount: data.amount !== undefined ? Number(data.amount) : undefined,
       month: data.month,
-      items: data.items !== undefined ? data.items : undefined,
+      items: data.items !== undefined ? (data.items as unknown as Prisma.InputJsonValue) : undefined,
     },
   });
 }

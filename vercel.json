@@ -1,7 +1,8 @@
 {
   "experimentalServices": {
     "web": {
-      "routePrefix": "/"
+      "routePrefix": "/",
+      "entrypoint": "src/server.ts"
     }
   }
 }

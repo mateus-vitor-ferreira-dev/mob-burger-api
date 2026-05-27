@@ -27,13 +27,13 @@ export async function createExpense(req: Request, res: Response) {
 }
 
 export async function updateExpense(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const expense = await updateExpenseService(id, req.body);
   res.json({ data: expense });
 }
 
 export async function deleteExpense(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   await deleteExpenseService(id);
   res.status(204).send();
 }

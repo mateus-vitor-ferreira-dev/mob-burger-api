@@ -10,7 +10,7 @@ export async function getMenu(_req: Request, res: Response) {
 }
 
 export async function getProduct(req: Request, res: Response) {
-  const product = await getProductService(req.params.id);
+  const product = await getProductService(req.params.id as string);
   if (!product) throw new AppError(MSG.menu.productNotFound, HTTP.NOT_FOUND, 'PRODUCT_NOT_FOUND');
   return success(res, product);
 }

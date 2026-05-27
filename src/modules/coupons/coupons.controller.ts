@@ -16,7 +16,8 @@ export async function validateCoupon(req: Request, res: Response) {
     itemsTotal: number;
     deliveryFee?: number;
   };
-  const customerId = req.user?.id ?? '';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const customerId = (req as any).user?.id ?? '';
   const result = await validateCouponService(code, itemsTotal, deliveryFee ?? 0, customerId);
   return success(res, result);
 }

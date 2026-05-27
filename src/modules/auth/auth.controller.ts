@@ -47,18 +47,21 @@ export async function refreshToken(req: Request, res: Response) {
 }
 
 export async function getMe(req: Request, res: Response) {
-  const result = await getMeService(req.user!.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await getMeService((req as any).user!.id);
   return success(res, result);
 }
 
 export async function updateMe(req: Request, res: Response) {
-  const result = await updateMeService(req.user!.id, req.body as { name?: string; phone?: string });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await updateMeService((req as any).user!.id, req.body as { name?: string; phone?: string });
   return success(res, result);
 }
 
 export async function changePassword(req: Request, res: Response) {
   const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
-  const result = await changePasswordService(req.user!.id, currentPassword, newPassword);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await changePasswordService((req as any).user!.id, currentPassword, newPassword);
   return success(res, result);
 }
 

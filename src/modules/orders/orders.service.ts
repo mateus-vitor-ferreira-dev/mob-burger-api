@@ -186,9 +186,9 @@ export async function cancelOrderByCustomerService(orderId: string, customerId: 
       'CANCEL_NOT_ALLOWED',
     );
 
-  if (order.paymentStatus === 'PAID' && order.stripePaymentIntentId) {
+  if (order.paymentStatus === 'PAID' && order.stripePaymentId) {
     try {
-      await stripe.refunds.create({ payment_intent: order.stripePaymentIntentId });
+      await stripe.refunds.create({ payment_intent: order.stripePaymentId });
     } catch {
       // Falha no reembolso não bloqueia o cancelamento
     }

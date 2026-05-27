@@ -14,7 +14,8 @@ import { HTTP } from '../../constants/httpStatus.js';
 import type { CreateOrderInput, UpdateStatusInput } from './orders.schema.js';
 
 export async function createOrder(req: Request, res: Response) {
-  const order = await createOrderService(req.user!.id, req.body as CreateOrderInput);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const order = await createOrderService((req as any).user!.id, req.body as CreateOrderInput);
   return success(res, order, HTTP.CREATED);
 }
 
@@ -26,7 +27,8 @@ export async function getOrder(req: Request, res: Response) {
 export async function myOrders(req: Request, res: Response) {
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 20;
-  const result = await myOrdersService(req.user!.id, page, limit);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await myOrdersService((req as any).user!.id, page, limit);
   return success(res, result);
 }
 
@@ -40,7 +42,7 @@ export async function listOrders(req: Request, res: Response) {
 }
 
 export async function updateOrderStatus(req: Request, res: Response) {
-  const order = await updateOrderStatusService(req.params.id, req.body as UpdateStatusInput);
+  const order = await updateOrderStatusService(req.params.id as string, req.body as UpdateStatusInput);
   return success(res, order);
 }
 
@@ -55,6 +57,7 @@ export async function assignDriver(req: Request, res: Response) {
 }
 
 export async function cancelOrderByCustomer(req: Request, res: Response) {
-  const order = await cancelOrderByCustomerService(req.params.id, req.user!.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const order = await cancelOrderByCustomerService(req.params.id as string, (req as any).user!.id);
   return success(res, order);
 }

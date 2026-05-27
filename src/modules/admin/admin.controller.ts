@@ -28,12 +28,12 @@ export async function createCategory(req: Request, res: Response) {
 export async function updateCategory(req: Request, res: Response) {
   return success(
     res,
-    await adminService.updateCategoryService(req.params.id, req.body as CategoryInput),
+    await adminService.updateCategoryService(req.params.id as string, req.body as CategoryInput),
   );
 }
 
 export async function deleteCategory(req: Request, res: Response) {
-  await adminService.deleteCategoryService(req.params.id);
+  await adminService.deleteCategoryService(req.params.id as string);
   return res.status(HTTP.NO_CONTENT).send();
 }
 
@@ -54,17 +54,17 @@ export async function createProduct(req: Request, res: Response) {
 export async function updateProduct(req: Request, res: Response) {
   return success(
     res,
-    await adminService.updateProductService(req.params.id, req.body as ProductInput),
+    await adminService.updateProductService(req.params.id as string, req.body as ProductInput),
   );
 }
 
 export async function deleteProduct(req: Request, res: Response) {
-  await adminService.deleteProductService(req.params.id);
+  await adminService.deleteProductService(req.params.id as string);
   return res.status(HTTP.NO_CONTENT).send();
 }
 
 export async function toggleProduct(req: Request, res: Response) {
-  return success(res, await adminService.toggleProductService(req.params.id));
+  return success(res, await adminService.toggleProductService(req.params.id as string));
 }
 
 // ─── Opções de personalização ─────────────────────────────────────────────────
@@ -77,7 +77,7 @@ export async function createProductOption(req: Request, res: Response) {
   return success(
     res,
     await adminService.createProductOptionService(
-      req.params.productId,
+      req.params.productId as string,
       req.body as ProductOptionInput,
     ),
     HTTP.CREATED,
@@ -88,14 +88,14 @@ export async function updateProductOption(req: Request, res: Response) {
   return success(
     res,
     await adminService.updateProductOptionService(
-      req.params.optionId,
+      req.params.optionId as string,
       req.body as ProductOptionInput,
     ),
   );
 }
 
 export async function deleteProductOption(req: Request, res: Response) {
-  await adminService.deleteProductOptionService(req.params.optionId);
+  await adminService.deleteProductOptionService(req.params.optionId as string);
   return res.status(HTTP.NO_CONTENT).send();
 }
 
@@ -104,7 +104,7 @@ export async function deleteProductOption(req: Request, res: Response) {
 export async function createOptionItem(req: Request, res: Response) {
   return success(
     res,
-    await adminService.createOptionItemService(req.params.optionId, req.body as OptionItemInput),
+    await adminService.createOptionItemService(req.params.optionId as string, req.body as OptionItemInput),
     HTTP.CREATED,
   );
 }
@@ -112,12 +112,12 @@ export async function createOptionItem(req: Request, res: Response) {
 export async function updateOptionItem(req: Request, res: Response) {
   return success(
     res,
-    await adminService.updateOptionItemService(req.params.itemId, req.body as OptionItemInput),
+    await adminService.updateOptionItemService(req.params.itemId as string, req.body as OptionItemInput),
   );
 }
 
 export async function deleteOptionItem(req: Request, res: Response) {
-  await adminService.deleteOptionItemService(req.params.itemId);
+  await adminService.deleteOptionItemService(req.params.itemId as string);
   return res.status(HTTP.NO_CONTENT).send();
 }
 
@@ -191,6 +191,7 @@ export async function createStaff(req: Request, res: Response) {
 }
 
 export async function deleteStaff(req: Request, res: Response) {
-  await adminService.deleteStaffService(req.params.id as string, req.user!.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await adminService.deleteStaffService(req.params.id as string, (req as any).user!.id);
   return success(res, null, HTTP.NO_CONTENT);
 }

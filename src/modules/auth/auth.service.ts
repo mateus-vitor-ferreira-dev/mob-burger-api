@@ -42,11 +42,12 @@ type StaffTokenPayload = { sub: string; email: string; role: string; type: 'staf
 type CustomerTokenPayload = { sub: string; email: string; type: 'customer' };
 
 function generateTokens(payload: StaffTokenPayload | CustomerTokenPayload) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const accessToken = jwt.sign(payload, AUTH_CONFIG.accessTokenSecret, {
-    expiresIn: AUTH_CONFIG.accessTokenExpiresIn,
+    expiresIn: AUTH_CONFIG.accessTokenExpiresIn as any,
   });
   const refreshToken = jwt.sign(payload, AUTH_CONFIG.refreshTokenSecret, {
-    expiresIn: AUTH_CONFIG.refreshTokenExpiresIn,
+    expiresIn: AUTH_CONFIG.refreshTokenExpiresIn as any,
   });
   return { accessToken, refreshToken };
 }
@@ -253,7 +254,7 @@ export async function forgotPasswordService(email: string): Promise<string | nul
   const token = jwt.sign(
     { sub: customer.id, type: 'password_reset' },
     AUTH_CONFIG.accessTokenSecret,
-    { expiresIn: '1h' },
+    { expiresIn: '1h' as any },
   );
 
   return token;

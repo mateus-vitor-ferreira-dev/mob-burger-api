@@ -287,27 +287,33 @@ router.post('/reset-password', authSensitiveLimiter, asyncHandler(resetPassword)
 import prisma from '../../config/prisma.js';
 
 router.get('/customer/favorites', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const customerId = (req as any).user!.id as string;
   const favorites = await prisma.customerFavorite.findMany({
-    where: { customerId: req.user!.id },
+    where: { customerId },
     select: { productId: true },
   });
   res.json({ data: favorites.map((f) => f.productId) });
 }));
 
 router.post('/customer/favorites', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const customerId = (req as any).user!.id as string;
   const { productId } = req.body as { productId: string };
   if (!productId) return res.status(400).json({ error: { message: 'productId obrigatório' } });
   await prisma.customerFavorite.upsert({
-    where: { customerId_productId: { customerId: req.user!.id, productId } },
-    create: { customerId: req.user!.id, productId },
+    where: { customerId_productId: { customerId, productId } },
+    create: { customerId, productId },
     update: {},
   });
   res.json({ data: { ok: true } });
 }));
 
 router.delete('/customer/favorites/:productId', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const customerId = (req as any).user!.id as string;
   await prisma.customerFavorite.deleteMany({
-    where: { customerId: req.user!.id, productId: req.params.productId },
+    where: { customerId, productId: req.params.productId },
   });
   res.json({ data: { ok: true } });
 }));
@@ -317,13 +323,15 @@ import { saveSubscription, removeSubscription, saveStaffSubscription, removeStaf
 
 router.put('/customer/expo-token', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
   const { token } = req.body as { token: string };
-  if (token) await saveExpoPushToken(req.user!.id, token);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (token) await saveExpoPushToken((req as any).user!.id, token);
   res.json({ data: { ok: true } });
 }));
 
 router.post('/push/subscribe', authMiddleware, requireCustomer, asyncHandler(async (req, res) => {
   const sub = req.body as { endpoint: string; keys: { p256dh: string; auth: string } };
-  await saveSubscription(req.user!.id, sub);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await saveSubscription((req as any).user!.id, sub);
   res.json({ data: { ok: true } });
 }));
 
@@ -338,7 +346,8 @@ import { requireAdmin } from '../../middlewares/auth.middleware.js';
 
 router.post('/push/staff/subscribe', authMiddleware, requireAdmin, asyncHandler(async (req, res) => {
   const sub = req.body as { endpoint: string; keys: { p256dh: string; auth: string } };
-  await saveStaffSubscription(req.user!.id, sub);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await saveStaffSubscription((req as any).user!.id, sub);
   res.json({ data: { ok: true } });
 }));
 
