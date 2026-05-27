@@ -62,6 +62,9 @@ export const comboConfigSchema = z.object({
   numDrinks: z.number().int().min(0).max(8),
   drinkCostPrice: z.number().min(0),
   allowedSlugs: z.array(z.string().min(1)).min(1),
+  drinkSlugs: z.array(z.string().min(1)).optional(),
+  numDesserts: z.number().int().min(0).max(8).optional(),
+  dessertSlugs: z.array(z.string().min(1)).optional(),
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;

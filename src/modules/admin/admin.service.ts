@@ -375,7 +375,8 @@ export async function setComboConfigService(productId: string, config: ComboConf
   // Remove all existing options for this product (they'll be replaced)
   await prisma.productOption.deleteMany({ where: { productId } });
 
-  // Create one RADIO option group per burger slot
+  // Create one RADIO option group per burger slot (sorted cheapest first)
+  const sortedBurgers = [...burgers].sort((a, b) => a.price - b.price);
   for (let slot = 1; slot <= config.numBurgers; slot++) {
     const label = config.numBurgers === 1 ? 'Escolha o Lanche' : `Lanche ${slot}`;
     await prisma.productOption.create({
@@ -385,18 +386,60 @@ export async function setComboConfigService(productId: string, config: ComboConf
         type: 'RADIO',
         required: true,
         items: {
-          create: burgers.map((b) => ({ name: b.name, additionalPrice: b.price })),
+          create: sortedBurgers.map((b) => ({ name: b.name, additionalPrice: b.price })),
         },
       },
     });
   }
 
-  const drinksCost = config.numDrinks * config.drinkCostPrice;
+  // Create one RADIO option group per drink slot (sorted cheapest first)
+  if (config.drinkSlugs && config.numDrinks > 0) {
+    const drinkCats = await prisma.category.findMany({
+      where: { slug: { in: config.drinkSlugs }, active: true },
+      include: { products: { where: { active: true, inStock: true }, orderBy: { name: 'asc' } } },
+    });
+    const drinks = [...drinkCats.flatMap((c) => c.products)].sort((a, b) => a.price - b.price);
+    for (let slot = 1; slot <= config.numDrinks; slot++) {
+      const label = config.numDrinks === 1 ? 'Escolha a Bebida' : `Bebida ${slot}`;
+      await prisma.productOption.create({
+        data: {
+          productId,
+          label,
+          type: 'RADIO',
+          required: true,
+          items: { create: drinks.map((d) => ({ name: d.name, additionalPrice: d.price })) },
+        },
+      });
+    }
+  }
+
+  // Create one RADIO option group per dessert slot (sorted cheapest first)
+  if (config.dessertSlugs && config.numDesserts && config.numDesserts > 0) {
+    const dessertCats = await prisma.category.findMany({
+      where: { slug: { in: config.dessertSlugs }, active: true },
+      include: { products: { where: { active: true, inStock: true }, orderBy: { name: 'asc' } } },
+    });
+    const desserts = [...dessertCats.flatMap((c) => c.products)].sort((a, b) => a.price - b.price);
+    for (let slot = 1; slot <= config.numDesserts; slot++) {
+      const label = config.numDesserts === 1 ? 'Escolha a Sobremesa' : `Sobremesa ${slot}`;
+      await prisma.productOption.create({
+        data: {
+          productId,
+          label,
+          type: 'RADIO',
+          required: true,
+          items: { create: desserts.map((d) => ({ name: d.name, additionalPrice: d.price })) },
+        },
+      });
+    }
+  }
+
+  // price = 0: todo o valor está nos additionalPrices das opções
   const updated = await prisma.product.update({
     where: { id: productId },
     data: {
       comboConfig: config as object,
-      price: drinksCost,
+      price: 0,
     },
   });
 
