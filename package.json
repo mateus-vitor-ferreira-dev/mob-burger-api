@@ -8,6 +8,7 @@
   "main": "src/server.ts",
   "type": "module",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "NODE_ENV=development nodemon --exec \"tsx --env-file=.env.development\" --ext ts,json src/server.ts",
     "start": "prisma migrate deploy && NODE_ENV=production tsx --env-file=.env.production src/server.ts",
     "prisma:generate": "prisma generate",
