@@ -1,16 +1,16 @@
 import { z } from 'zod';
 
 const orderItemOptionSchema = z.object({
-  optionItemId: z.string().cuid(),
+  optionItemId: z.string().min(1),
 });
 
 const orderItemExtraSchema = z.object({
-  extraId: z.string().cuid(),
+  extraId: z.string().min(1),
   qty: z.number().int().min(1).default(1),
 });
 
 const orderItemSchema = z.object({
-  productId: z.string().cuid(),
+  productId: z.string().min(1),
   quantity: z.number().int().min(1),
   observations: z.string().max(200).optional(),
   options: z.array(orderItemOptionSchema).default([]),
@@ -22,7 +22,7 @@ const deliveryInfoSchema = z.object({
   number: z.string().min(1),
   neighborhood: z.string().min(2),
   complement: z.string().optional(),
-  zoneId: z.string().cuid().optional(),
+  zoneId: z.string().min(1).optional(),
 });
 
 export const createOrderSchema = z
