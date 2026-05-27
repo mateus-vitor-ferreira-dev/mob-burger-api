@@ -9,7 +9,6 @@ export const validate =
     const result = schema.safeParse(req.body);
     if (!result.success) {
       const details = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ');
-      console.error('[validate] body:', JSON.stringify(req.body), '| errors:', details);
       throw new AppError(
         `Dados inválidos: ${details}`,
         HTTP.BAD_REQUEST,
