@@ -1,15 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
+import crypto from 'crypto';
 
 vi.mock('../../config/prisma.js', () => ({
   default: {
-    order: { update: vi.fn() },
-  },
-}));
-
-vi.mock('../../config/stripe.js', () => ({
-  default: {
-    webhooks: { constructEvent: vi.fn() },
+    order: { findUnique: vi.fn(), update: vi.fn() },
   },
 }));
 
@@ -17,104 +12,119 @@ vi.mock('../orders/orders.sse.js', () => ({
   broadcastOrderUpdate: vi.fn(),
 }));
 
+vi.mock('../notifications/whatsapp.service.js', () => ({
+  sendWhatsApp: vi.fn(),
+  buildOrderConfirmedMessage: vi.fn(() => 'msg'),
+}));
+
 import prisma from '../../config/prisma.js';
-import stripe from '../../config/stripe.js';
 import { broadcastOrderUpdate } from '../orders/orders.sse.js';
-import { handleStripeWebhook } from './webhook.controller.js';
+import { handlePagarmeWebhook } from './webhook.controller.js';
 
-const mockRes = () => {
-  const res = { json: vi.fn() } as unknown as Response;
-  return res;
-};
+const WEBHOOK_SECRET = 'test_secret';
 
-const makeReq = (sig: string | undefined, body: Buffer = Buffer.from('{}')) =>
-  ({ headers: { 'stripe-signature': sig }, body }) as unknown as Request;
+function makeSignature(body: Buffer): string {
+  return 'sha256=' + crypto.createHmac('sha256', WEBHOOK_SECRET).update(body).digest('hex');
+}
 
-beforeEach(() => vi.clearAllMocks());
+const mockRes = () => ({ json: vi.fn() } as unknown as Response);
 
-describe('handleStripeWebhook', () => {
-  it('400 — sem stripe-signature no header', async () => {
-    await expect(handleStripeWebhook(makeReq(undefined), mockRes())).rejects.toMatchObject({
+function makeReq(body: object, sig?: string): Request {
+  const buf = Buffer.from(JSON.stringify(body));
+  return {
+    headers: { 'x-hub-signature': sig ?? makeSignature(buf) },
+    body: buf,
+  } as unknown as Request;
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  process.env.PAGARME_WEBHOOK_SECRET = WEBHOOK_SECRET;
+});
+
+describe('handlePagarmeWebhook', () => {
+  it('400 — sem x-hub-signature', async () => {
+    const req = makeReq({}, undefined);
+    (req.headers as any)['x-hub-signature'] = undefined;
+
+    await expect(handlePagarmeWebhook(req, mockRes())).rejects.toMatchObject({
       statusCode: 400,
       code: 'WEBHOOK_INVALID',
     });
   });
 
-  it('400 — constructEvent lança erro (assinatura inválida)', async () => {
-    vi.mocked(stripe.webhooks.constructEvent).mockImplementation(() => {
-      throw new Error('signature mismatch');
-    });
+  it('400 — assinatura inválida', async () => {
+    const req = makeReq({ type: 'order.paid' }, 'sha256=invalida');
 
-    await expect(handleStripeWebhook(makeReq('bad_sig'), mockRes())).rejects.toMatchObject({
+    await expect(handlePagarmeWebhook(req, mockRes())).rejects.toMatchObject({
       statusCode: 400,
       code: 'WEBHOOK_INVALID',
     });
   });
 
-  it('200 — payment_intent.succeeded marca pedido como PAID e CONFIRMED', async () => {
-    const mockOrder = { id: 'o1', status: 'CONFIRMED', paymentStatus: 'PAID' };
-    vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
-      type: 'payment_intent.succeeded',
-      data: { object: { metadata: { orderId: 'o1' } } },
+  it('order.paid — marca pedido como PAID e CONFIRMED quando ainda pendente', async () => {
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({ paymentStatus: 'PENDING' } as any);
+    vi.mocked(prisma.order.update).mockResolvedValue({
+      id: 'o1', orderNumber: 1, totalPrice: 29.9,
+      customer: { name: 'Test', phone: '35999' },
+      items: [{ quantity: 1, product: { name: 'Mob Bacon' } }],
     } as any);
-    vi.mocked(prisma.order.update).mockResolvedValue(mockOrder as any);
 
+    const body = { type: 'order.paid', data: { code: 'o1' } };
     const res = mockRes();
-    await handleStripeWebhook(makeReq('valid_sig'), res);
+    await handlePagarmeWebhook(makeReq(body), res);
 
-    expect(prisma.order.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: 'o1' },
-        data: { paymentStatus: 'PAID', status: 'CONFIRMED' },
-      }),
-    );
-    expect(broadcastOrderUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'new_order' }),
-    );
+    expect(prisma.order.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'o1' },
+      data: { paymentStatus: 'PAID', status: 'CONFIRMED' },
+    }));
+    expect(broadcastOrderUpdate).toHaveBeenCalledWith(expect.objectContaining({ type: 'new_order' }));
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
-  it('200 — payment_intent.succeeded sem orderId não atualiza banco', async () => {
-    vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
-      type: 'payment_intent.succeeded',
-      data: { object: { metadata: {} } },
-    } as any);
+  it('order.paid — não reprocessa pedido já pago', async () => {
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({ paymentStatus: 'PAID' } as any);
 
+    const body = { type: 'order.paid', data: { code: 'o1' } };
     const res = mockRes();
-    await handleStripeWebhook(makeReq('valid_sig'), res);
+    await handlePagarmeWebhook(makeReq(body), res);
 
     expect(prisma.order.update).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
-  it('200 — payment_intent.payment_failed marca paymentStatus como FAILED', async () => {
-    vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
-      type: 'payment_intent.payment_failed',
-      data: { object: { metadata: { orderId: 'o1' } } },
+  it('charge.paid — usa order.code como orderId', async () => {
+    vi.mocked(prisma.order.findUnique).mockResolvedValue({ paymentStatus: 'PENDING' } as any);
+    vi.mocked(prisma.order.update).mockResolvedValue({
+      id: 'o1', orderNumber: 1, totalPrice: 29.9,
+      customer: { name: 'Test', phone: null },
+      items: [],
     } as any);
+
+    const body = { type: 'charge.paid', data: { order: { code: 'o1' } } };
+    await handlePagarmeWebhook(makeReq(body), mockRes());
+
+    expect(prisma.order.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'o1' } }));
+  });
+
+  it('charge.payment_failed — marca paymentStatus como FAILED', async () => {
     vi.mocked(prisma.order.update).mockResolvedValue({} as any);
 
+    const body = { type: 'charge.payment_failed', data: { order: { code: 'o1' } } };
     const res = mockRes();
-    await handleStripeWebhook(makeReq('valid_sig'), res);
+    await handlePagarmeWebhook(makeReq(body), res);
 
-    expect(prisma.order.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: 'o1' },
-        data: { paymentStatus: 'FAILED' },
-      }),
-    );
-    expect(broadcastOrderUpdate).not.toHaveBeenCalled();
+    expect(prisma.order.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'o1' },
+      data: { paymentStatus: 'FAILED' },
+    }));
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
-  it('200 — evento desconhecido retorna received sem erros', async () => {
-    vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
-      type: 'customer.created',
-      data: { object: {} },
-    } as any);
-
+  it('evento desconhecido retorna received sem erros', async () => {
+    const body = { type: 'customer.created', data: {} };
     const res = mockRes();
-    await handleStripeWebhook(makeReq('valid_sig'), res);
+    await handlePagarmeWebhook(makeReq(body), res);
 
     expect(prisma.order.update).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
