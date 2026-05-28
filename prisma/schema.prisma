@@ -176,7 +176,7 @@ model Order {
   notes           String?
   paymentMethod   PaymentMethod
   paymentStatus   PaymentStatus @default(PENDING)
-  stripePaymentId String?
+  paymentGatewayId String?
   driverId        String?
   driver          Driver?       @relation(fields: [driverId], references: [id])
   couponId        String?
